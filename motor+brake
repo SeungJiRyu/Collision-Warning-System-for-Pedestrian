@@ -1,0 +1,47 @@
+#define pushButton 5
+
+int num=1; //전진, 후진 (임시)
+
+int brk=0;
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+
+  pinMode(6,OUTPUT); //ENB, 3,4번에 대한 속도제어(PWM)
+  pinMode(7,OUTPUT); //IN4
+  pinMode(8,OUTPUT); //IN3
+  pinMode(9,OUTPUT); //IN2
+  pinMode(10,OUTPUT); //IN1
+  pinMode(11,OUTPUT); //ENA 1,2번에 대한 속도제어(PWM)
+
+  pinMode(pushButton, INPUT);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  uint8_t sp = analogRead(A5)/4;
+  int brk = digitalRead(pushButton);
+
+  if (brk == 0) {
+    analogWrite(11,sp);
+    analogWrite(6,sp);
+    digitalWrite(10,HIGH);
+    digitalWrite(9,LOW); // +- 라서 정방향 회전
+    digitalWrite(8,HIGH);
+    digitalWrite(7,LOW);
+  }
+  //브레이크
+  else if (brk == 1) {
+    analogWrite(11,sp);
+    analogWrite(6,sp);
+    digitalWrite(10,HIGH);
+    digitalWrite(9,HIGH); // -+ 라서 역방향 회전
+    digitalWrite(8,HIGH);
+    digitalWrite(7,HIGH);     
+  }
+
+  Serial.print("Speed Input: ");
+  Serial.println(sp);
+}
