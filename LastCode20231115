@@ -1,0 +1,134 @@
+#define ENCODER 2
+#define trigPin 11 //output세팅
+#define echoPin 12 //input세팅
+#define offsetForZero 2 //초음파센서 영점 맞추는 변수
+#define delayTime 300 //초음파센서, 엔코더 딜레이
+
+volatile int encoder = 0;
+const float wheelDiameter = 6.6; // 바퀴 지름 (cm)
+const float distancePerRevolution = 2 * PI * (wheelDiameter / 2); //한 바퀴당 이동거리(cm) 
+const float rotationPerRevolution = 130;
+
+
+void ISR_encoder(){
+  encoder++;
+}
+
+void setup(){
+  /* Ultrasonic */
+  pinMode(echoPin,INPUT);
+  pinMode(trigPin,OUTPUT);
+
+  /* Encoder */
+  Serial.begin(57600);
+  pinMode(ENCODER, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ENCODER), ISR_encoder, FALLING);
+}
+
+unsigned long timePrev = 0;
+unsigned long timeCurr = 0;
+volatile int encoderPrev = 0;
+volatile float revolutions = 0;
+volatile float rpm = 0;
+volatile float speed = 0;
+volatile float filteredVelocity = 0;
+
+void loop(){
+  //초기화
+  digitalWrite(echoPin,LOW);
+  digitalWrite(trigPin,LOW);
+  delayMicroseconds(2);
+  //trigger 신호 발생(10us)
+  digitalWrite(trigPin,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin,LOW);
+
+  //pulseIn(pin,value) : 펄스의 길이를 unsigned long 형의 마이크로초[us] 단위로 반환, timeout까지 펄스가 만들어지지 않으면 0을 반환
+  unsigned long duration1 = pulseIn(echoPin,HIGH);
+  //거리 계산(cm) float distance = (float)(duration * 340 / 10000.0 / 2.0);
+  float distance1 = (float)(duration1/58);
+
+  delay(delayTime);
+  digitalWrite(echoPin,LOW);
+  digitalWrite(trigPin,LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin,HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin,LOW);
+
+  unsigned long duration2 = pulseIn(echoPin,HIGH);
+  float distance2 = ((float) (340*duration2)/10000)/2; //340m/s * (1s / 10^6ms) * duaration ms * 100 cm / 1m
+
+  float velocity = ((float)(distance2-distance1)/(delayTime*0.001)) - offsetForZero;
+
+  for(int i=0 ; i < 200 ; i++){ //0.02초에 대한 평균값
+    filteredVelocity += velocity;
+    delayMicroseconds(100);
+  }
+  filteredVelocity /= 100;
+
+  String disStr = String(distance2);
+  String velStr = String(velocity);
+
+
+  Serial.print("dist: ");
+  Serial.print(distance2);
+  Serial.print(", vel: ");
+  Serial.println(filteredVelocity);
+
+///////////////////////////////////////////////////////////
+
+ timeCurr = millis();
+ if(timeCurr - timePrev > delayTime){ //1초마다 출력
+    timePrev = timeCurr;
+    noInterrupts();
+
+    revolutions = float(encoder-encoderPrev)/rotationPerRevolution;
+    rpm = revolutions * 60; //초당 회전수 1초 : (timeCurr - timePrev)
+    
+    // RPM을 cm/s로 변환
+    speed = (rpm * distancePerRevolution) / 60; // cm/s로 변환
+
+
+    Serial.print("Velocity(cm/s): ");
+    Serial.println(speed*5.26,7);
+    Serial.println(revolutions);
+    Serial.println();
+
+    encoderPrev = encoder;
+  
+    interrupts();
+  }
+}
+
+/* Sound Sensor
+#define SOUND A0
+int vol = 0;
+int count = 0;
+
+
+void setup() {
+  Serial.begin(9600);
+}
+
+void loop() {
+  vol = analogRead(SOUND);
+
+  if(vol>300){
+    count++;
+    Serial.print("sound: ");
+    Serial.println(count);
+    Serial.print("volume: ");
+    Serial.println(vol);
+    delay(500);
+  }
+  
+  /*
+  Serial.print("sound volume : ");
+  Serial.print(vol);
+  Serial.println();
+  delay(100);
+  */
+
+
+/* 바퀴 지름 6.6 */
