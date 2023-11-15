@@ -1,0 +1,20 @@
+#define BUZ 9
+
+void setup() {
+  // put your setup code here, to run once:
+
+  Serial.begin(9600);
+  pinMode(BUZ, OUTPUT);
+}
+
+void loop() {
+  // put your main code here, to run repeatedly:
+  uint8_t dB = analogRead(A5);
+
+  tone(BUZ,261,50);
+  delay(150);
+  
+  analogWrite(6,dB);
+  Serial.print("Potentimetor: ");
+  Serial.println(dB);
+}
