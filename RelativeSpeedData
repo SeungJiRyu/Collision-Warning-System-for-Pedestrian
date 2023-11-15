@@ -1,0 +1,84 @@
+Test1
+ist: 53.60, vel: -18.73
+Velocity(cm/s): 3.5089178
+
+dist: 48.96, vel: -14.80
+Velocity(cm/s): 3.3494215
+
+dist: 43.78, vel: -13.29
+Velocity(cm/s): 3.3494215
+
+dist: 37.62, vel: -16.39
+Velocity(cm/s): 3.3494215
+
+dist: 30.51, vel: -24.35
+Velocity(cm/s): 3.9874062
+
+dist: 24.84, vel: -21.94
+Velocity(cm/s): 3.6684138
+
+dist: 19.28, vel: -19.31
+Velocity(cm/s): 3.6684138
+
+dist: 13.19, vel: -22.68
+Velocity(cm/s): 3.8279102
+
+dist: 6.94, vel: -21.36
+Velocity(cm/s): 3.5089178
+
+dist: 4.66, vel: -11.03
+Velocity(cm/s): 3.1899249
+
+
+Test2
+ist: 51.77, vel: -13.53
+Velocity(cm/s): 15.7901287
+0.25
+
+dist: 44.40, vel: -14.33
+Velocity(cm/s): 14.3546638
+0.23
+
+dist: 38.93, vel: -7.28
+Velocity(cm/s): 14.3546638
+0.23
+
+dist: 32.67, vel: -11.72
+Velocity(cm/s): 13.3976860
+0.22
+
+dist: 26.09, vel: -10.93
+Velocity(cm/s): 11.9622192
+0.19
+
+dist: 19.43, vel: -12.25
+Velocity(cm/s): 13.8761749
+0.22
+
+Test3
+ist: 56.47, vel: -10.01
+Velocity(cm/s): 13.8761749
+0.22
+
+dist: 48.89, vel: -11.32
+Velocity(cm/s): 16.2686195
+0.26
+
+dist: 42.35, vel: -10.42
+Velocity(cm/s): 13.8761749
+0.22
+
+dist: 36.06, vel: -8.99
+Velocity(cm/s): 12.4407081
+0.20
+
+dist: 27.59, vel: -13.91
+Velocity(cm/s): 13.3976860
+0.22
+
+dist: 21.39, vel: -12.37
+Velocity(cm/s): 13.3976860
+0.22
+
+dist: 15.03, vel: -11.07
+Velocity(cm/s): 13.8761749
