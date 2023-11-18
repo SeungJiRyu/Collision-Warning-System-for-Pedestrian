@@ -1,10 +1,20 @@
-// 부저, 경보음 출력 코드 (띠 띠 띠 띠)
+// 부저, 경보음 출력 코드
 // 이 코드는 pin3, pin11의 출력을 방해함
+
+// 코드 설명:
+// situation 변수를 Serial.Monitor로 입력,
+// 초기 상태(0)은 부저 X
+// situation==1 일 때 부저음1 (띠 띠 띠 띠) 발생 (전방 물체와 거리 가까워짐, partial braking)
+// situation==2 일 때 부저음2 (띠----) 발생 (전방 물체와 거리 매우 가까움), full braking
+
 
 #define BUZZER 0x08 // 부저 출력 단자
 #define DUTY 1 // 부저음 크기(PWM) / [5, 15, 30, 95] 4단계로 분류 
 
-const float frequency = 440.00;
+const float frequency = 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
+
+// 상황을 식별하는 변수
+int situation=0;
 
 void setup() {
 
@@ -16,18 +26,51 @@ void setup() {
   TCCR2A |= (1<<WGM21) |(1<<WGM20);
   TCCR2B |= (1<<WGM22); // Fast PWM, TOP을 OCRA로 지정하였으므로, OCR2A의 값을 계산한다.
   TCCR2B |= (1<<CS22) | (1<<CS21) | (0<<CS20);
+
+
+  OCR2A = F_CPU / 256 / frequency -1;
+  OCR2B = OCR2A *DUTY/100;
+  
+  //실제 코드에 필요없는 부분
+  Serial.begin(9600);
+  
 }
 
 void loop() {
-  OCR2A = F_CPU / 256 / frequency -1;
+  //Serial Monitor 로 테스트
+  
+  if (Serial.available()){
+    situation = Serial.parseInt();
+  }
 
+  if (situation == 1) {
+    buzzer_sound_mode1();
+  }
+  else if (situation == 2) {
+    buzzer_sound_mode2();
+  }
+  else {
+    DDRD &= ~BUZZER;
+  }
+
+  //실제 코드에 필요없는 부분
+  Serial.println(situation);
+ 
+}
+
+//위험 감지 시(+partial braking), 띠 띠 띠 띠
+void buzzer_sound_mode1() {
+    
+  
+  OCR2A = F_CPU / 256 / frequency -1;
+  OCR2B = OCR2A *DUTY/100;
   //pinMode(3,HIGH);
   DDRD |= BUZZER;
   OCR2B = OCR2A *DUTY/100 ;
 
   //Delay 10 * 2ms = 20ms, 20ms 동안 경보
   for (uint16_t j=0; j<10; j++){
-    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 4ms
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 2ms
       asm("nop");
     }
   }
@@ -36,22 +79,24 @@ void loop() {
   DDRD &= ~BUZZER;
   //Delay 10 * 2ms = 20ms, 20ms 동안 대기
   for (uint16_t j=0; j<10; j++){
-    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*64000 = 4ms
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 2ms
       asm("nop");
     }
   }
 }
 
-/* 충돌 예상될때 경보음 코드(+full braking)
-OCR2A = F_CPU / 256 / frequency -1;
-
+//충돌 예상 시(full braking), 띠----
+void buzzer_sound_mode2() {
+  OCR2A = F_CPU / 256 / frequency -1;
+  OCR2B = OCR2A *DUTY/100;
+  //pinMode(3,HIGH);
   DDRD |= BUZZER;
   OCR2B = OCR2A *DUTY/100 ;
 
   //Delay 10 * 2ms = 20ms, 20ms 동안 경보
-  for (uint16_t j=0; j<10; j++){
-    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 4ms
+for (uint16_t j=0; j<10; j++){
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 2ms
       asm("nop");
     }
   }
-*/
+}
