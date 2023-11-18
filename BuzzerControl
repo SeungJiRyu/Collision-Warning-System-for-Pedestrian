@@ -1,20 +1,56 @@
-#define BUZ 9
+// 부저, 경보음 출력 코드 (띠 띠 띠 띠)
+// 이 코드는 pin3, pin11의 출력을 방해함
+
+#define BUZZER 0x08 // 부저 출력 단자
+#define DUTY 1 // 부저음 크기(PWM) / [5, 15, 30, 95] 4단계로 분류 
+
+const float frequency = 440.00;
+
+uint8_t freq_count =0;
+
+ISR(INT0_vect){
+
+  //OCRA를 다시 계산, 16Mhz / 256 / (OCR2A+1) -> 256 대신 값을 지정하여, 정확한 target 주파수를 맞춤
+
+}
 
 void setup() {
-  // put your setup code here, to run once:
 
-  Serial.begin(9600);
-  pinMode(BUZ, OUTPUT);
+  //Setting output port
+  DDRD |= BUZZER;
+
+  //Timercounter setting
+  TCCR2A |= (1<<COM2B1);
+  TCCR2A |= (1<<WGM21) |(1<<WGM20);
+  TCCR2B |= (1<<WGM22); // Fast PWM, TOP을 OCRA로 지정하였으므로, OCR2A의 값을 계산한다.
+  TCCR2B |= (1<<CS22) | (1<<CS21) | (0<<CS20);
+
+
+  OCR2A = F_CPU / 256 / frequency -1;
+  OCR2B = OCR2A *DUTY/100;
+  
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  uint8_t dB = analogRead(A5);
+  OCR2A = F_CPU / 256 / frequency -1;
 
-  tone(BUZ,261,50);
-  delay(150);
+  //pinMode(3,HIGH);
+  DDRD |= BUZZER;
+  OCR2B = OCR2A *DUTY/100 ;
+
+  //Delay 10 * 2ms = 20ms, 20ms 동안 경보
+  for (uint16_t j=0; j<10; j++){
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 4ms
+      asm("nop");
+    }
+  }
   
-  analogWrite(6,dB);
-  Serial.print("Potentimetor: ");
-  Serial.println(dB);
+  //pinMode(3,LOW);
+  DDRD &= ~BUZZER;
+  //Delay 10 * 2ms = 20ms, 20ms 동안 대기
+  for (uint16_t j=0; j<10; j++){
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*64000 = 4ms
+      asm("nop");
+    }
+  }
 }
