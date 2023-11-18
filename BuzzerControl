@@ -6,14 +6,6 @@
 
 const float frequency = 440.00;
 
-uint8_t freq_count =0;
-
-ISR(INT0_vect){
-
-  //OCRA를 다시 계산, 16Mhz / 256 / (OCR2A+1) -> 256 대신 값을 지정하여, 정확한 target 주파수를 맞춤
-
-}
-
 void setup() {
 
   //Setting output port
@@ -24,11 +16,6 @@ void setup() {
   TCCR2A |= (1<<WGM21) |(1<<WGM20);
   TCCR2B |= (1<<WGM22); // Fast PWM, TOP을 OCRA로 지정하였으므로, OCR2A의 값을 계산한다.
   TCCR2B |= (1<<CS22) | (1<<CS21) | (0<<CS20);
-
-
-  OCR2A = F_CPU / 256 / frequency -1;
-  OCR2B = OCR2A *DUTY/100;
-  
 }
 
 void loop() {
