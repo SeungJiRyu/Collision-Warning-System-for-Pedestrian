@@ -1,0 +1,14 @@
+<파일 업로드>
+git status //상태 확인
+git add .
+git commit -m "버젼 이름"
+git log //저장 상태 확인
+git remote -v //연결상태 확인
+git remote add origin https://github.com/TaewookKwon/kwontaewook.git
+git push origin master
+
+<파일 끌어오기>
+Powershell 빈 폴더 위치에서,
+git init
+git remote add origin https://github.com/주소
+git pull origin master
