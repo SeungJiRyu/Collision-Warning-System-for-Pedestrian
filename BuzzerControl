@@ -41,3 +41,17 @@ void loop() {
     }
   }
 }
+
+/* 충돌 예상될때 경보음 코드(+full braking)
+OCR2A = F_CPU / 256 / frequency -1;
+
+  DDRD |= BUZZER;
+  OCR2B = OCR2A *DUTY/100 ;
+
+  //Delay 10 * 2ms = 20ms, 20ms 동안 경보
+  for (uint16_t j=0; j<10; j++){
+    for(uint16_t i=0; i < 32000; i++){ //1/(16*10^6)*32000 = 4ms
+      asm("nop");
+    }
+  }
+*/
