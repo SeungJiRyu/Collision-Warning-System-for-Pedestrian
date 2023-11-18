@@ -1,6 +1,8 @@
 #define ENCODER 2
 #define trigPin 11 //output세팅
 #define echoPin 12 //input세팅
+#define offsetForZero 13 //초음파센서 영점 맞추는 변수
+#define delayTime 50 //초음파센서, 엔코더 딜레이
 
 volatile int encoder = 0;
 const float wheelDiameter = 6.6; // 바퀴 지름 (cm)
@@ -29,6 +31,7 @@ volatile int encoderPrev = 0;
 volatile float revolutions = 0;
 volatile float rpm = 0;
 volatile float speed = 0;
+volatile float filteredVelocity = 0;
 
 void loop(){
   digitalWrite(echoPin,LOW);
@@ -41,7 +44,7 @@ void loop(){
   unsigned long duration1 = pulseIn(echoPin,HIGH);
   float distance1 = ((float) (340*duration1)/10000)/2; //*1000/
 
-  delay(300);
+  delay(delayTime);
   digitalWrite(echoPin,LOW);
   digitalWrite(trigPin,LOW);
   delayMicroseconds(2);
@@ -52,7 +55,13 @@ void loop(){
   unsigned long duration2 = pulseIn(echoPin,HIGH);
   float distance2 = ((float) (340*duration2)/10000)/2; //340m/s * (1s / 10^6ms) * duaration ms * 100 cm / 1m
 
-  float velocity = ((float)(distance2-distance1)/0.3) - 15;
+  float velocity = ((float)(distance2-distance1)/delayTime*0.001) - offsetForZero;
+
+  for(int i=0 ; i < 100 ; i++){ //0.1초에 대한 평균값
+    filteredVelocity += velocity;
+    delayMicroseconds(100);
+  }
+  filteredVelocity /= 100;
 
   String disStr = String(distance2);
   String velStr = String(velocity);
@@ -61,18 +70,18 @@ void loop(){
   Serial.print("dist: ");
   Serial.print(distance2);
   Serial.print(", vel: ");
-  Serial.println(velocity);
+  Serial.println(filteredVelocity);
 
 ///////////////////////////////////////////////////////////
 
  timeCurr = millis();
- if(timeCurr - timePrev > 1000){ //1초마다 출력
+ if(timeCurr - timePrev > delayTime){ //1초마다 출력
     timePrev = timeCurr;
     noInterrupts();
 
     revolutions = float(encoder-encoderPrev)/rotationPerRevolution;
     rpm = revolutions * 60; //초당 회전수 1초 : (timeCurr - timePrev)
-    
+
     // RPM을 cm/s로 변환
     speed = (rpm * distancePerRevolution) / 60; // cm/s로 변환
 
@@ -81,16 +90,16 @@ void loop(){
     Serial.print(".");
     Serial.print("Velocity(cm/s): ");
     Serial.print(speed,7);
-    
+
     Serial.print("revolutions: ");
     Serial.print(revolutions);
     Serial.println();
 
     encoderPrev = encoder;
-    
+
     interrupts();
     Serial.println();
-    
+
   }
 }
 
@@ -115,7 +124,7 @@ void loop() {
     Serial.println(vol);
     delay(500);
   }
-  
+
   /*
   Serial.print("sound volume : ");
   Serial.print(vol);
