@@ -66,10 +66,11 @@ void loop(){
   String disStr = String(distance2);
   String velStr = String(velocity);
 
-
-  Serial.print("dist: ");
+// " "의 : 옆에 띄어쓰기가 있으면 시리얼플로터가 작동 안됨!
+  Serial.print("dist:");
   Serial.print(distance2);
-  Serial.print(", vel: ");
+  Serial.print(",");
+  Serial.print("vel:");
   Serial.println(filteredVelocity);
 
 ///////////////////////////////////////////////////////////
