@@ -1,7 +1,7 @@
 /* Buzzer code */
 #define BUZZER 3 // buzzer output - PD3
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
-volatile uint8_t DUTY = 1; // 부저음 크기(PWM) / [5, 15, 30, 95] 4단계로 분류
+volatile uint8_t DUTY = 1; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
 
 //1차 경보 : 위험 감지 시(With partial braking), 띠 띠 띠 띠
 void buzzer_sound_mode1(uint8_t DUTY){
