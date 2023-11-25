@@ -4,8 +4,13 @@
 volatile uint8_t DUTY = 1; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
 
 //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
-unsigned long previousMillis = 0;
-int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
+volatile unsigned long previousMillis = 0;
+volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
+
+//상황 판단 변수 0,1,2
+volatile int Situation=0;
+volatile int prevSituation=0;
+
 
 //1차 경보 : 위험 감지 시(With partial braking), 띠 띠 띠 띠
 void buzzer_sound_mode1(uint8_t DUTY){
@@ -13,23 +18,20 @@ void buzzer_sound_mode1(uint8_t DUTY){
   OCR2B = OCR2A *DUTY/100; //for dB, 이 값에 비례해서 데시벨 결정
   
   unsigned long currentMillis = millis();
-  if ((currentMillis-previousMillis)>1000){
-    flag=0; //현재시간과 기존 시간이 1초 이상 차이 나면, flag를 초기화한다, flag=1에서 부저가 종료되어도 1초 후에는 정상동작할 수 있음
-  }
 
   if (flag==0){
     //pinMode(3,HIGH);
+    DDRD |= (1<<BUZZER);//on
     if((currentMillis-previousMillis)>=40){
       previousMillis = currentMillis;
-      DDRD |= (1<<BUZZER);//on
-      toggle ^= 1;
+      flag ^= 1;
     }
   }
   else{
+    DDRD &= ~(1<<BUZZER);//off
     if((currentMillis-previousMillis)>=70){
       previousMillis = currentMillis;
-      DDRD &= ~(1<<BUZZER);//off
-      toggle ^= 1;
+      flag ^= 1;
     }
   }
 }
@@ -77,10 +79,19 @@ void loop() {
   Serial.println();
 
   if((digitalRead(6) == 1) && (digitalRead(7) == 0)){
+    Situation=0;
     buzzer_sound_mode1(DUTY);
   }else if((digitalRead(6) == 1) && (digitalRead(7) == 1)){
+    Situation=1;
     buzzer_sound_mode2(DUTY);
   }else if((digitalRead(6) == 0) && (digitalRead(7) == 0)){
+    Situation=2;
     DDRD &= ~(1<<BUZZER);
   }
+
+  //만약 제어상황이 바뀌면, 코드 진행이 '부저가 꺼져있음' 부터 시작되어야 하므로 flag=0을 만들어준다.
+  if (Situation != prevSituation){
+    flag=0;
+  }
+  prevSituation=Situation;
 }
