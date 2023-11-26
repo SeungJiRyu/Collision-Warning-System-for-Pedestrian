@@ -6,8 +6,8 @@
 #define echoPin 13 //ultrasonic input
 #define ENCODER 2 //encoder input - PD2
 #define BUZZER 3 // buzzer output - PD3
-#define bit1ForBuzzer 4
-#define bit2ForBuzzer 5
+#define bit1ForSituation 4
+#define bit2ForSituation 5
 
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
@@ -121,32 +121,32 @@ float measure_velocity_using_encoder(){
 
 
 /* Buzzer code */
-#define no_buze 990
-#define buze_with_partial_break 991
-#define buze_eve_full_break 992
+#define situation1_no_detection 990 //00
+#define situation2_partial_break 991 //10
+#define situation3_full_break 992 //11
 
 void make_warning_sound(){
-  volatile int situation = no_buze; //충돌예상거리에 따른 상황분류를 위한 변수
+  volatile int situation = situation1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
   volatile float boundary_for_partial_break = 30; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
   volatile float boundary_for_full_break = 10;////////////////////////////////////////////////////////////////////////
 
   if(measure_distance() < boundary_for_full_break){
-    situation = buze_eve_full_break;
+    situation = situation3_full_break;
   }else if(measure_distance() < boundary_for_partial_break){
-    situation = buze_with_partial_break;
+    situation = situation2_partial_break;
   }else{
-    situation = no_buze;
+    situation = situation1_no_detection;
   }
 
-  if(situation == buze_with_partial_break){
-    digitalWrite(bit1ForBuzzer,HIGH); //With partial breaking
-    digitalWrite(bit2ForBuzzer,LOW); //With partial breaking
-  }else if(situation == buze_eve_full_break){
-    digitalWrite(bit1ForBuzzer,HIGH); //With partial breaking
-    digitalWrite(bit2ForBuzzer,HIGH); //With partial breaking
+  if(situation == situation2_partial_break){
+    digitalWrite(bit1ForSituation,HIGH); 
+    digitalWrite(bit2ForSituation,LOW); 
+  }else if(situation == situation3_full_break){
+    digitalWrite(bit1ForSituation,HIGH); 
+    digitalWrite(bit2ForSituation,HIGH);
   }else{
-    digitalWrite(bit1ForBuzzer,LOW); //With partial breaking
-    digitalWrite(bit2ForBuzzer,LOW); //With partial breaking 
+    digitalWrite(bit1ForSituation,LOW); 
+    digitalWrite(bit2ForSituation,LOW); 
   }
 }
 
@@ -161,8 +161,8 @@ void setup(){
   attachInterrupt(digitalPinToInterrupt(ENCODER), ISR_encoder, FALLING);
 
   /* Buzzer */
-  pinMode(4,OUTPUT);
-  pinMode(5,OUTPUT);
+  pinMode(bit1ForSituation,OUTPUT);
+  pinMode(bit2ForSituation,OUTPUT);
 }
 
 void loop(){
