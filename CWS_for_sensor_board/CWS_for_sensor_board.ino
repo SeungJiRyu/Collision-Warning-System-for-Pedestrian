@@ -12,7 +12,7 @@
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
-#define delayTime 50 //초음파센서, 엔코더 딜레이
+#define delayTime 100 //초음파센서, 엔코더 딜레이
 volatile float sensorValues[20]; //필터링을 위한 배열 선언
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
@@ -89,7 +89,6 @@ void ISR_encoder(){
   encoder++;
 }
 
-float measure_velocity_using_encoder(){
   #define wheelDiameter  6.6 // 바퀴 지름 (cm)
   #define rotationPerRevolution  130
   #define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm) 
@@ -100,17 +99,18 @@ float measure_velocity_using_encoder(){
   volatile float rpm = 0;
   volatile float velocity = 0;
   volatile float filteredVelocity = 0;
-  
+
+float measure_velocity_using_encoder(){
   timeCurr = millis();
   if(timeCurr - timePrev > delayTime){ //1초마다 출력
     timePrev = timeCurr;
     noInterrupts();
 
-    revolutions = float(encoder-encoderPrev)/rotationPerRevolution;
-    rpm = revolutions * 60; //초당 회전수 1초 : (timeCurr - timePrev)
+    revolutions = float(encoder-encoderPrev)/float(rotationPerRevolution); //delayTime동안의 회전수
+    rpm = revolutions * delayTime; //초당 회전수 1초 : (timeCurr - timePrev)
 
     // RPM을 cm/s로 변환
-    velocity = (rpm * distancePerRevolution) / 60; // cm/s로 변환
+    velocity = (revolutions * distancePerRevolution * 1000)/ delayTime; // cm/s로 변환
     
     encoderPrev = encoder;
     interrupts();
@@ -175,16 +175,20 @@ void loop(){
   delay(200);
   */
 
-  /* Test for encoder */
-  float value = measure_distance();
-  Serial.print("거리:");
-  Serial.print(String(value));
-  Serial.print(",");
-  make_warning_sound();
-  Serial.print(digitalRead(4));
-  Serial.print(digitalRead(5));
-  Serial.println();
+  /* Test for ultra-sonic */
+  // float value = measure_distance();
+  // Serial.print("거리:");
+  // Serial.print(String(value));
+  // Serial.print(",");
+  // make_warning_sound();
+  // Serial.print(digitalRead(4));
+  // Serial.print(digitalRead(5));
+  // Serial.println();
   //delay(50);
+  
+  /* Test for Encoder */
+  Serial.print("초속:");
+  Serial.println(measure_velocity_using_encoder());
 }
 
 /* Sound Sensor
