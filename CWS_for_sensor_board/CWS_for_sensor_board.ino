@@ -12,7 +12,7 @@
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
-#define delayTime 100 //초음파센서, 엔코더 딜레이
+#define delayTime 200 //초음파센서, 엔코더 딜레이
 volatile float sensorValues[20]; //필터링을 위한 배열 선언
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
@@ -90,7 +90,7 @@ void ISR_encoder(){
 }
 
   #define wheelDiameter  6.6 // 바퀴 지름 (cm)
-  #define rotationPerRevolution  130
+  #define rotationPerRevolution 75
   #define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm) 
   unsigned long timePrev = 0;
   unsigned long timeCurr = 0;
@@ -99,6 +99,7 @@ void ISR_encoder(){
   volatile float rpm = 0;
   volatile float velocity = 0;
   volatile float filteredVelocity = 0;
+  volatile float sensitivity_vel = 0.5;
 
 float measure_velocity_using_encoder(){
   timeCurr = millis();
@@ -111,11 +112,11 @@ float measure_velocity_using_encoder(){
 
     // RPM을 cm/s로 변환
     velocity = (revolutions * distancePerRevolution * 1000)/ delayTime; // cm/s로 변환
-    
+    filteredVelocity = filteredVelocity * (1-sensitivity_vel) + velocity * sensitivity_vel;
     encoderPrev = encoder;
     interrupts();
 
-    return velocity;
+    return filteredVelocity;
   }
 }
 
