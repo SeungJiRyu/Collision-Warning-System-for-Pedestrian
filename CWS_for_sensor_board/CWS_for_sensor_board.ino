@@ -120,34 +120,68 @@ float measure_velocity_using_encoder(){
   }
 }
 
+volatile boolean runflag = false;
+
+/* Collision distance */
+float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
+// 킥보드의 속도에 따라 '충돌예상거리'를 결정해주는 함수
+  float vel = measure_velocity_using_encoder();
+  float col_dist = max(20.0,min(40.0,20.0+(40.0-20.0)/30.0*vel)); //25: speed max value
+
+  if(vel<=2.0){
+    runflag=false;
+  }
+  else{
+    runflag=true;
+  }
+  return col_dist;
+}
 
 /* Buzzer code */
 #define situation1_no_detection 990 //00
-#define situation2_partial_break 991 //10
-#define situation3_full_break 992 //11
+#define situation2_detect 991 //01
+#define situation3_partial_brake 992 //10
+#define situation4_full_brake 993 //11
 
-void make_warning_sound(){
+volatile int brakeflag=0;
+
+void check_for_situation(){
   volatile int situation = situation1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
-  volatile float boundary_for_partial_break = 30; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
-  volatile float boundary_for_full_break = 10;////////////////////////////////////////////////////////////////////////
+  volatile float boundary_for_detect = estimate_collision_distance();//estimate_collision_distance();
+  volatile float boundary_for_partial_brake = 15.0; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
+  volatile float boundary_for_full_brake = 5.0;////////////////////////////////////////////////////////////////////////
 
-  if(measure_distance() < boundary_for_full_break){
-    situation = situation3_full_break;
-  }else if(measure_distance() < boundary_for_partial_break){
-    situation = situation2_partial_break;
-  }else{
+  if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
+    situation = situation4_full_brake;
+    brakeflag=1;
+  }
+  else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
+    situation = situation3_partial_brake;
+  }
+  else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
+    situation = situation2_detect;
+  }
+  else{
     situation = situation1_no_detection;
   }
 
-  if(situation == situation2_partial_break){
+  if (brakeflag==1){
+    situation=situation4_full_brake;
+  }
+
+  if(situation == situation2_detect){
+    digitalWrite(bit1ForSituation,LOW); 
+    digitalWrite(bit2ForSituation,HIGH);
+  }
+  else if(situation == situation3_partial_brake){
     digitalWrite(bit1ForSituation,HIGH); 
-    digitalWrite(bit2ForSituation,LOW); 
-  }else if(situation == situation3_full_break){
+    digitalWrite(bit2ForSituation,LOW);
+  }else if(situation == situation4_full_brake){
     digitalWrite(bit1ForSituation,HIGH); 
     digitalWrite(bit2ForSituation,HIGH);
   }else{
     digitalWrite(bit1ForSituation,LOW); 
-    digitalWrite(bit2ForSituation,LOW); 
+    digitalWrite(bit2ForSituation,LOW);
   }
 }
 
@@ -157,7 +191,7 @@ void setup(){
   pinMode(trigPin,OUTPUT);
 
   /* Encoder */
-  Serial.begin(57600);
+  Serial.begin(9600);
   pinMode(ENCODER, INPUT_PULLUP);
   attachInterrupt(digitalPinToInterrupt(ENCODER), ISR_encoder, FALLING);
 
@@ -167,29 +201,40 @@ void setup(){
 }
 
 void loop(){
+  
+  check_for_situation();
+  // Serial.print(digitalRead(4));
+  // Serial.print(digitalRead(5));
+  //Serial.println(runflag);
+  //measure_velocity_using_encoder();
   /* Test for ultra-sonic */
+  /**/
+  //float value = measure_distance();
   /*
-  DDRD &= ~(1<<BUZZER);
-  float value = measure_distance();
   Serial.print(String(value));
   Serial.println();
   delay(200);
   */
 
   /* Test for ultra-sonic */
-  // float value = measure_distance();
+  //float value = measure_distance();
   // Serial.print("거리:");
   // Serial.print(String(value));
   // Serial.print(",");
-  // make_warning_sound();
-  // Serial.print(digitalRead(4));
-  // Serial.print(digitalRead(5));
+  // check_for_situation();
+  // 
   // Serial.println();
   //delay(50);
   
-  /* Test for Encoder */
+  /* Test for collison distance
+  Serial.println(estimate_collision_distance());
+  */
+
+  /* Test for Encoder
   Serial.print("초속:");
-  Serial.println(measure_velocity_using_encoder());
+  float tvelocity=measure_velocity_using_encoder();
+  Serial.println(tvelocity);
+  */
 }
 
 /* Sound Sensor
