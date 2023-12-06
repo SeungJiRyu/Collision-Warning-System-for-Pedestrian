@@ -119,7 +119,7 @@ volatile boolean runflag = true;
 float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 // 킥보드의 속도에 따라 '충돌예상거리'를 결정해주는 함수
   float vel = measure_velocity_using_encoder();
-  float col_dist = max(20.0,min(40.0,20.0+(40.0-20.0)/30.0*vel)); //25: speed max value
+  float col_dist = max(30.0,min(50.0,30.0+(50.0-30.0)/40.0*(vel-10))); //25: speed max value
 
   // if(vel<=2.0){
   //   runflag=false;
@@ -140,28 +140,26 @@ volatile int brakeflag=0;
 
 void make_warning_sound(){
   volatile int interval = Interval1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
-  volatile float boundary_for_detect = 50;//estimate_collision_distance();//estimate_collision_distance();
-  volatile float boundary_for_partial_brake = 28.0; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
-  volatile float boundary_for_full_brake = 10.0;////////////////////////////////////////////////////////////////////////
+  volatile float boundary_for_detect = estimate_collision_distance();
+  volatile float boundary_for_partial_brake = 28.0;
+  volatile float boundary_for_full_brake = 10.0;
 
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
     interval = Interval4_full_brake;
     brakeflag=1;
-  }
-  else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
+    delay(5000); //급제동 후 다시 출발하지 않도록 구동부를 정지
+  }else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
     interval = Interval3_partial_brake;
-  }
-  else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
+  }else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
     interval = Interval2_detect;
-  }
-  else{
+    brakeflag=0;
+  }else{
     interval = Interval1_no_detection;
+    brakeflag=0;
   }
-
   if (brakeflag==1){
     interval = Interval4_full_brake;
   }
-
   if(interval == Interval2_detect){
     digitalWrite(bit1ForInterval,LOW);
     digitalWrite(bit2ForInterval,HIGH);
@@ -176,6 +174,8 @@ void make_warning_sound(){
     digitalWrite(bit1ForInterval,LOW);
     digitalWrite(bit2ForInterval,LOW);
   }
+
+  Serial.println(boundary_for_detect);
 }
 
 void setup(){
@@ -191,22 +191,23 @@ void setup(){
   /* Buzzer */
   pinMode(bit1ForInterval,OUTPUT);
   pinMode(bit2ForInterval,OUTPUT);
+
+  brakeflag=0;
 }
 
 void loop(){
-  runflag = true;
   make_warning_sound();
-  // Serial.print(digitalRead(4));
-  // Serial.print(digitalRead(5));
+
+  //Test code
+  //Serial.print(digitalRead(4));
+  //Serial.println(digitalRead(5));
   //Serial.println(runflag);
   //measure_velocity_using_encoder();
-  /* Test for ultra-sonic */
-  /**/
-  //float value = measure_distance();
-  /*
+  
+  /* Test for ultra-sonic 
+  float value = measure_distance();
   Serial.print(String(value));
   Serial.println();
-  delay(200);
   */
 
   /* Test for ultra-sonic */
@@ -222,7 +223,6 @@ void loop(){
   /* Test for collison distance
   Serial.println(estimate_collision_distance());
   */
-
   /* Test for Encoder
   Serial.print("초속:");
   float tvelocity=measure_velocity_using_encoder();
