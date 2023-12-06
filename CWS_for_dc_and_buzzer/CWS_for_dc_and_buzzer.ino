@@ -17,32 +17,32 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define frontDirection2 9
 #define rearDirection1 8
 #define rearDirection2 7
-#define bit1ForSituation 4
-#define bit2ForSituation 5
+#define bit1ForInterval 4
+#define bit2ForInterval 5
 #define ledWarning 2
-#define limitPWM  120 
+#define limitPWM  120
 #define PWMControl  60
-#define situation1_no_detection 990
-#define situation2_detect 991
-#define situation3_partial_break 992
-#define situation4_full_break 993
-volatile int sit = situation1_no_detection;
+#define Interval1_no_detection 990
+#define Interval2_detect 991
+#define Interval3_partial_break 992
+#define Interval4_full_break 993
+volatile int interval = Interval1_no_detection;
 
 //거리에 따라 상황을 구별하는 함수
-int distingushingSituation(){
-  volatile int bit1 = digitalRead(bit1ForSituation);
-  volatile int bit2 = digitalRead(bit2ForSituation);
+int distingushingInterval(){
+  volatile int bit1 = digitalRead(bit1ForInterval);
+  volatile int bit2 = digitalRead(bit2ForInterval);
 
   if((bit1 == 0) && (bit2 == 1)){
-    sit = situation2_detect;
+    interval = Interval2_detect;
   }else if((bit1 == 1) && (bit2 == 0)){
-    sit = situation3_partial_break;
+    interval = Interval3_partial_break;
   }else if((bit1 == 1) && (bit2 == 1)){
-    sit = situation4_full_break;
+    interval = Interval4_full_break;
   }else if((bit1 == 0) && (bit2 == 0)){
-    sit = situation1_no_detection;
+    interval = Interval1_no_detection;
   }
-  return sit;
+  return interval;
 }
 
 /* function for buzzer */
@@ -50,7 +50,7 @@ int distingushingSituation(){
 void buzzer_sound_mode1(uint8_t DUTY){
   OCR2A = F_CPU / 256 / frequency -1; //make ra
   OCR2B = OCR2A *DUTY/100; //for dB, 이 값에 비례해서 데시벨 결정
-  
+ 
   unsigned long currentMillis = millis();
 
   if (flag==0){
@@ -74,7 +74,7 @@ void buzzer_sound_mode1(uint8_t DUTY){
 void buzzer_sound_mode2(uint8_t DUTY){
   OCR2A = F_CPU / 256 / frequency -1;
   OCR2B = OCR2A *DUTY/100;
-  
+ 
   flag = 0; //partial break시 토글하던 flag값을 초기화
 
   //pinMode(3,HIGH);
@@ -88,9 +88,9 @@ void buzzer_sound_mode2(uint8_t DUTY){
 
 
 void setup() {
-  /* Serial communicaton for distinguishing situation */
-  pinMode(bit1ForSituation,INPUT);
-  pinMode(bit2ForSituation,INPUT);
+  /* Serial communicaton for distinguishing Interval */
+  pinMode(bit1ForInterval,INPUT);
+  pinMode(bit2ForInterval,INPUT);
 
   /* PWM */
   Serial.begin(9600);
@@ -118,22 +118,22 @@ void setup() {
 
 void loop() {
   //상황 구별
-  sit = distingushingSituation();
+  interval = distingushingInterval();
 
   /* loop for driver controller and buzzer */
   uint8_t speedControl = min(analogRead(A5)/4,limitPWM); //가변저항 output(range:0~255)
 
-  
-  if(sit == situation4_full_break){ //정지
+ 
+  if(interval == Interval4_full_break){ //정지
     analogWrite(PWM_motor,speedControl);
     digitalWrite(frontDirection1,LOW);
     digitalWrite(frontDirection2,LOW); // 정지
     digitalWrite(rearDirection1,LOW);
     digitalWrite(rearDirection2,LOW);
-    
+   
     DDRD &= ~(1<<BUZZER);
     digitalWrite(ledWarning, LOW);
-  }else if(sit == situation2_detect){
+  }else if(interval == Interval2_detect){
     analogWrite(PWM_motor,speedControl);
     digitalWrite(frontDirection1,HIGH);
     digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전
@@ -142,7 +142,7 @@ void loop() {
     buzzer_sound_mode1(DUTY);
 
     digitalWrite(ledWarning, LOW);
-  }else if(sit == situation3_partial_break){
+  }else if(interval == Interval3_partial_break){
     if(speedControl<10){
     analogWrite(PWM_motor,speedControl);
     }
@@ -156,7 +156,7 @@ void loop() {
 
     buzzer_sound_mode2(DUTY);
     digitalWrite(ledWarning, HIGH);
-  }else{ //sit == situation1_no_detection
+  }else{ //interval == Interval1_no_detection
     analogWrite(PWM_motor,speedControl);
     digitalWrite(frontDirection1,HIGH);
     digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전

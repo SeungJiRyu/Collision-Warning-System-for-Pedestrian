@@ -6,8 +6,8 @@
 #define echoPin 13 //ultrasonic input
 #define ENCODER 2 //encoder input - PD2
 #define BUZZER 3 // buzzer output - PD3
-#define bit1ForSituation 4
-#define bit2ForSituation 5
+#define bit1ForInterval 4
+#define bit2ForInterval 5
 
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
@@ -91,7 +91,7 @@ void ISR_encoder(){
 
   #define wheelDiameter  6.6 // 바퀴 지름 (cm)
   #define rotationPerRevolution 75
-  #define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm) 
+  #define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm)
   unsigned long timePrev = 0;
   unsigned long timeCurr = 0;
   volatile int encoderPrev = 0;
@@ -138,50 +138,50 @@ float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 }
 
 /* Buzzer code */
-#define situation1_no_detection 990 //00
-#define situation2_detect 991 //01
-#define situation3_partial_brake 992 //10
-#define situation4_full_brake 993 //11
+#define Interval1_no_detection 990 //00
+#define Interval2_detect 991 //01
+#define Interval3_partial_brake 992 //10
+#define Interval4_full_brake 993 //11
 
 volatile int brakeflag=0;
 
 void make_warning_sound(){
-  volatile int situation = situation1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
+  volatile int interval = Interval1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
   volatile float boundary_for_detect = 50;//estimate_collision_distance();//estimate_collision_distance();
   volatile float boundary_for_partial_brake = 28.0; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
   volatile float boundary_for_full_brake = 10.0;////////////////////////////////////////////////////////////////////////
 
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
-    situation = situation4_full_brake;
+    interval = Interval4_full_brake;
     brakeflag=1;
   }
   else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
-    situation = situation3_partial_brake;
+    interval = Interval3_partial_brake;
   }
   else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
-    situation = situation2_detect;
+    interval = Interval2_detect;
   }
   else{
-    situation = situation1_no_detection;
+    interval = Interval1_no_detection;
   }
 
   if (brakeflag==1){
-    situation=situation4_full_brake;
+    interval = Interval4_full_brake;
   }
 
-  if(situation == situation2_detect){
-    digitalWrite(bit1ForSituation,LOW); 
-    digitalWrite(bit2ForSituation,HIGH);
+  if(interval == Interval2_detect){
+    digitalWrite(bit1ForInterval,LOW);
+    digitalWrite(bit2ForInterval,HIGH);
   }
-  else if(situation == situation3_partial_brake){
-    digitalWrite(bit1ForSituation,HIGH); 
-    digitalWrite(bit2ForSituation,LOW);
-  }else if(situation == situation4_full_brake){
-    digitalWrite(bit1ForSituation,HIGH); 
-    digitalWrite(bit2ForSituation,HIGH);
+  else if(interval == Interval3_partial_brake){
+    digitalWrite(bit1ForInterval,HIGH);
+    digitalWrite(bit2ForInterval,LOW);
+  }else if(interval == Interval4_full_brake){
+    digitalWrite(bit1ForInterval,HIGH);
+    digitalWrite(bit2ForInterval,HIGH);
   }else{
-    digitalWrite(bit1ForSituation,LOW); 
-    digitalWrite(bit2ForSituation,LOW);
+    digitalWrite(bit1ForInterval,LOW);
+    digitalWrite(bit2ForInterval,LOW);
   }
 }
 
@@ -196,8 +196,8 @@ void setup(){
   attachInterrupt(digitalPinToInterrupt(ENCODER), ISR_encoder, FALLING);
 
   /* Buzzer */
-  pinMode(bit1ForSituation,OUTPUT);
-  pinMode(bit2ForSituation,OUTPUT);
+  pinMode(bit1ForInterval,OUTPUT);
+  pinMode(bit2ForInterval,OUTPUT);
 }
 
 void loop(){
@@ -222,10 +222,10 @@ void loop(){
   // Serial.print(String(value));
   // Serial.print(",");
   // make_warning_sound();
-  // 
+  //
   // Serial.println();
   //delay(50);
-  
+ 
   /* Test for collison distance
   Serial.println(estimate_collision_distance());
   */
