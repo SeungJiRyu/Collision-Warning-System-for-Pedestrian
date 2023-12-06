@@ -191,7 +191,6 @@ void setup(){
   /* Buzzer */
   pinMode(bit1ForInterval,OUTPUT);
   pinMode(bit2ForInterval,OUTPUT);
-
   brakeflag=0;
 }
 
