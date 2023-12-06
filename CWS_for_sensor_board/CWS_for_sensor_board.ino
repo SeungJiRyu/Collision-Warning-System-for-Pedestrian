@@ -120,7 +120,7 @@ float measure_velocity_using_encoder(){
   }
 }
 
-volatile boolean runflag = false;
+volatile boolean runflag = true;
 
 /* Collision distance */
 float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
@@ -128,12 +128,12 @@ float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
   float vel = measure_velocity_using_encoder();
   float col_dist = max(20.0,min(40.0,20.0+(40.0-20.0)/30.0*vel)); //25: speed max value
 
-  if(vel<=2.0){
-    runflag=false;
-  }
-  else{
-    runflag=true;
-  }
+  // if(vel<=2.0){
+  //   runflag=false;
+  // }
+  // else{
+  //   runflag=true;
+  // }
   return col_dist;
 }
 
@@ -145,11 +145,11 @@ float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 
 volatile int brakeflag=0;
 
-void check_for_situation(){
+void make_warning_sound(){
   volatile int situation = situation1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
-  volatile float boundary_for_detect = estimate_collision_distance();//estimate_collision_distance();
-  volatile float boundary_for_partial_brake = 15.0; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
-  volatile float boundary_for_full_brake = 5.0;////////////////////////////////////////////////////////////////////////
+  volatile float boundary_for_detect = 50;//estimate_collision_distance();//estimate_collision_distance();
+  volatile float boundary_for_partial_brake = 28.0; /////////////////////////////나중에 엔코더 속도 맞춰서 수식 써야하는 부분//////
+  volatile float boundary_for_full_brake = 10.0;////////////////////////////////////////////////////////////////////////
 
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
     situation = situation4_full_brake;
@@ -201,8 +201,8 @@ void setup(){
 }
 
 void loop(){
-  
-  check_for_situation();
+  runflag = true;
+  make_warning_sound();
   // Serial.print(digitalRead(4));
   // Serial.print(digitalRead(5));
   //Serial.println(runflag);
@@ -221,7 +221,7 @@ void loop(){
   // Serial.print("거리:");
   // Serial.print(String(value));
   // Serial.print(",");
-  // check_for_situation();
+  // make_warning_sound();
   // 
   // Serial.println();
   //delay(50);

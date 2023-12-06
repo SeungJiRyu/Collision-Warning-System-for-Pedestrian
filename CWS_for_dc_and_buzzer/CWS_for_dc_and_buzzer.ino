@@ -21,7 +21,7 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define bit2ForSituation 5
 #define ledWarning 2
 #define limitPWM  120 
-#define PWMControl  50
+#define PWMControl  60
 #define situation1_no_detection 990
 #define situation2_detect 991
 #define situation3_partial_break 992
