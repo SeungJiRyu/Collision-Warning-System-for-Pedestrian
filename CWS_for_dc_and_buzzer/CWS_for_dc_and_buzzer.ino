@@ -24,21 +24,21 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define PWMControl  60
 #define Interval1_no_detection 990
 #define Interval2_detect 991
-#define Interval3_partial_break 992
-#define Interval4_full_break 993
+#define Interval3_partial_brake 992
+#define Interval4_full_brake 993
 volatile int interval = Interval1_no_detection;
 
 //거리에 따라 상황을 구별하는 함수
-int distingushingInterval(){
+int distinguish_interval(){
   volatile int bit1 = digitalRead(bit1ForInterval);
   volatile int bit2 = digitalRead(bit2ForInterval);
 
   if((bit1 == 0) && (bit2 == 1)){
     interval = Interval2_detect;
   }else if((bit1 == 1) && (bit2 == 0)){
-    interval = Interval3_partial_break;
+    interval = Interval3_partial_brake;
   }else if((bit1 == 1) && (bit2 == 1)){
-    interval = Interval4_full_break;
+    interval = Interval4_full_brake;
   }else if((bit1 == 0) && (bit2 == 0)){
     interval = Interval1_no_detection;
   }
@@ -75,7 +75,7 @@ void buzzer_sound_mode2(uint8_t DUTY){
   OCR2A = F_CPU / 256 / frequency -1;
   OCR2B = OCR2A *DUTY/100;
  
-  flag = 0; //partial break시 토글하던 flag값을 초기화
+  flag = 0; //partial brake시 토글하던 flag값을 초기화
 
   //pinMode(3,HIGH);
   DDRD |= (1<<BUZZER);
@@ -118,13 +118,13 @@ void setup() {
 
 void loop() {
   //상황 구별
-  interval = distingushingInterval();
+  interval = distinguish_Interval();
 
   /* loop for driver controller and buzzer */
   uint8_t speedControl = min(analogRead(A5)/4,limitPWM); //가변저항 output(range:0~255)
 
  
-  if(interval == Interval4_full_break){ //정지
+  if(interval == Interval4_full_brake){ //정지
     analogWrite(PWM_motor,speedControl);
     digitalWrite(frontDirection1,LOW);
     digitalWrite(frontDirection2,LOW); // 정지
@@ -142,7 +142,7 @@ void loop() {
     buzzer_sound_mode1(DUTY);
 
     digitalWrite(ledWarning, LOW);
-  }else if(interval == Interval3_partial_break){
+  }else if(interval == Interval3_partial_brake){
     if(speedControl<10){
     analogWrite(PWM_motor,speedControl);
     }
