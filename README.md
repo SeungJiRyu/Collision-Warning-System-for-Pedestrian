@@ -4,6 +4,8 @@
 
 CWS-충돌경보시스템은 Collision-Warning-System-for-Pedestrian에서 약자를 활용하여 CWS라 하겠다-는 크게 2가지 기능으로 구성되어 있다. 
 
+![purpose_img](https://github.com/SeungJiRyu/Collision-Warning-System-for-Pedestrian/assets/108774002/3bf86e60-4532-4dc5-bfb3-b774a610dffc)
+
 첫 번째 기능은 보행자를 위한 경보음 발생 기능이다.전동킥보드가 도로를 주행하는 상황에서 충돌예상거리 이내에 보행자 식별 시 경보음을 발생하여 전동킥보드를 인지하지 못하는 보행자에게 전동킥보드가 주행 중임을 알린다.
 
 두 번째 기능은 충돌예상거리 이내에 보행자가 감지된 경우, 보행자와의 거리에 따라 충돌이 예상되는 위험도를 판단하여 자동으로 제동하는 Partial Braking System기능이다.
