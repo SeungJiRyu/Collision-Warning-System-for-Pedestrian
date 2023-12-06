@@ -13,13 +13,11 @@
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
 #define delayTime 200 //초음파센서, 엔코더 딜레이
-volatile float sensorValues[20]; //필터링을 위한 배열 선언
+volatile float filterdistance=0; //필터링을 위한 배열 선언
+volatile float sensitivity_dis=0.1;
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
 float measure_distance(){
-  for(int i = 0 ; i < 20-1 ; i++){
-    sensorValues[i]= sensorValues[i+1];
-  }
   digitalWrite(echoPin,LOW);
   digitalWrite(trigPin,LOW);
   delayMicroseconds(2);
@@ -27,16 +25,11 @@ float measure_distance(){
   delayMicroseconds(10);
   digitalWrite(trigPin,LOW);
 
-  unsigned long duration1 = pulseIn(echoPin,HIGH);
-  float distance = ((float) (340*duration1)/10000)/2;
-
-  sensorValues[20-1] = distance;
-  float filterDistance = 0;
-  for (int i=0; i< 20; i++){
-    filterDistance += sensorValues[i];
-  }
-  filterDistance /=20;
-  return filterDistance;
+  unsigned long duration = pulseIn(echoPin,HIGH);
+  float distance = ((float) (340*duration)/10000)/2;
+  filterdistance = filterdistance *(1-sensitivity_dis)+distance*sensitivity_dis;
+  
+  return filterdistance;
 }
 
  /* 초음파 센서로 상대속도를 측정,계산하는 함수 */
