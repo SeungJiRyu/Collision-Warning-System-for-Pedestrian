@@ -28,10 +28,9 @@ volatile int interval = Interval1_no_detection;
 
 #define situation1_normal 555
 #define situation2_sudden_dectection 556
-volatile int situation = situation1_no_person; //check for situation
 
 //충돌거리에 따라 구간을 구별하는 함수
-int distinguish_interval(){
+int distinguish_Interval(){
   volatile int bit1 = digitalRead(bit1ForInterval);
   volatile int bit2 = digitalRead(bit2ForInterval);
 
@@ -87,14 +86,14 @@ void buzzer_sound_mode2(uint8_t DUTY){
 }
 
 /* brake system(Driver Controller) for each interval */
-void normal_drive(){
+void normal_drive(uint8_t speedControl){
   analogWrite(PWM_motor,speedControl);
   digitalWrite(frontDirection1,HIGH);
   digitalWrite(frontDirection2,LOW);
   digitalWrite(rearDirection1,HIGH);
   digitalWrite(rearDirection2,LOW);
 }
-void partial_brake(){
+void partial_brake(uint8_t speedControl){
   if(speedControl<10){
     analogWrite(PWM_motor,speedControl);
     }
@@ -106,7 +105,7 @@ void partial_brake(){
     digitalWrite(rearDirection1,HIGH);
     digitalWrite(rearDirection2,LOW);
 }
-void full_brake(){
+void full_brake(uint8_t speedControl){
   analogWrite(PWM_motor,speedControl);
   digitalWrite(frontDirection1,LOW);
   digitalWrite(frontDirection2,LOW); //정지
@@ -148,7 +147,6 @@ void setup() {
 
 void loop() {
   //충돌거리에 따른 구간 구별
-  situation = distinguish_situation()
   interval = distinguish_Interval();
 
   /* loop for driver controller and buzzer */
@@ -160,19 +158,19 @@ void loop() {
 
  /* driver controller */
   if(interval == Interval4_full_brake){ 
-    full_brake();
+    full_brake(speedControl);
     DDRD &= ~(1<<BUZZER);
     digitalWrite(ledWarning, LOW);
   }else if(interval == Interval2_detect){
-    nomal_drive();
+    normal_drive(speedControl);
     buzzer_sound_mode1(DUTY);
     digitalWrite(ledWarning, LOW);
   }else if(interval == Interval3_partial_brake){
-    partial_brake();
+    partial_brake(speedControl);
     buzzer_sound_mode2(DUTY);
     digitalWrite(ledWarning, HIGH);
   }else{ //interval == Interval1_no_detection
-    normal_drive();
+    normal_drive(speedControl);
     DDRD &= ~(1<<BUZZER); //buzzer off
     digitalWrite(ledWarning, LOW);
   }

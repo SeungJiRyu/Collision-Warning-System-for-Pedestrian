@@ -184,7 +184,7 @@ void make_warning_sound(){
 }
 
 /* variable for HOG dectection */
-unsigned long latestDetectionTime = 0;
+unsigned long lastestDetectionTime = 0;
 volatile float previousDistance = 0;
 volatile float gap = 0;
 
@@ -227,10 +227,10 @@ void loop(){
       // send signal for Interval1_no_detection
       digitalWrite(bit1ForInterval,LOW);
       digitalWrite(bit2ForInterval,LOW);
-    }else if{ // person detection
-        make_warning_sound();
-      }
+    }else{ // person detection
+      make_warning_sound();
     }
+  }
 }
 
   //Test code
@@ -263,7 +263,6 @@ void loop(){
   float tvelocity=measure_velocity_using_encoder();
   Serial.println(tvelocity);
   */
-}
 
 /* Sound Sensor
 #define SOUND A0
