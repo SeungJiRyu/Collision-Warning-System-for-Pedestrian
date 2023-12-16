@@ -122,7 +122,7 @@ volatile boolean runflag = true;
 float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 // 킥보드의 속도에 따라 '충돌예상거리'를 결정해주는 함수
   float vel = measure_velocity_using_encoder();
-  float col_dist = max(30.0,min(50.0,30.0+(50.0-30.0)/40.0*(vel-10))); //25: speed max value
+  float col_dist = max(20.0,min(70.0,20.0+(70.0-20.0)/40.0*(vel))); //25: speed max value
 
   // if(vel<=2.0){
   //   runflag=false;
@@ -151,7 +151,6 @@ void make_warning_sound(){
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
     interval = Interval4_full_brake;
     brakeflag=1;
-    delay(5000); //급제동 후 다시 출발하지 않도록 구동부를 정지
   }else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
     interval = Interval3_partial_brake;
   }else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
@@ -247,10 +246,13 @@ void loop(){
   */
 
   /* Test for ultra-sonic */
-  //float value = measure_distance();
-  // Serial.print("거리:");
-  // Serial.print(String(value));
-  // Serial.print(",");
+  float value = measure_distance();
+  Serial.print("거리:");
+  Serial.print(String(value));
+  Serial.print(",");
+  Serial.print(digitalRead(4));
+  Serial.println(digitalRead(5));
+
   // make_warning_sound();
   //
   // Serial.println();

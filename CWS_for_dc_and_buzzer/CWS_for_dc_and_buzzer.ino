@@ -4,6 +4,7 @@
 /* Constant for buzzer */
 #define BUZZER 3 // buzzer output - PD3
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
+
 volatile uint8_t DUTY = 95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
 volatile unsigned long previousMillis = 0; //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
 volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
@@ -153,14 +154,14 @@ void loop() {
 
   /* speedController using potentiometer */
   uint8_t speedControl = min(analogRead(A5)/4,limitPWM); //가변저항 output(range:0~255)
-
   
 
  /* driver controller */
   if(interval == Interval4_full_brake){ 
     full_brake(speedControl);
     DDRD &= ~(1<<BUZZER);
-    digitalWrite(ledWarning, LOW);
+    digitalWrite(ledWarning, LOW);\
+    //delay(5000); //급제동 후 다시 출발하지 않도록 구동부를 정지
   }else if(interval == Interval2_detect){
     normal_drive(speedControl);
     buzzer_sound_mode1(DUTY);
