@@ -4,7 +4,7 @@
 /* Constant for buzzer */
 #define BUZZER 3 // buzzer output - PD3
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
-volatile uint8_t DUTY = 95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
+volatile uint8_t DUTY = 5; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
 
 //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
 volatile unsigned long previousMillis = 0;
@@ -116,7 +116,7 @@ void setup() {
 
 void loop() {
   //상황 구별
-  interval = distinguish_Interval();
+  interval = distinguish_interval();
 
   /* loop for driver controller and buzzer */
 
@@ -130,9 +130,9 @@ void loop() {
     digitalWrite(frontDirection2,LOW); // 정지
     digitalWrite(rearDirection1,LOW);
     digitalWrite(rearDirection2,LOW);
-   
     DDRD &= ~(1<<BUZZER);
-    digitalWrite(ledWarning, LOW);
+    digitalWrite(ledWarning, LOW);\
+    //delay(5000); //급제동 후 다시 출발하지 않도록 구동부를 정지
   }else if(interval == Interval2_detect){
     analogWrite(PWM_motor,speedControl);
     digitalWrite(frontDirection1,HIGH);
