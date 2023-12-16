@@ -216,12 +216,20 @@ void loop(){
     digitalWrite(bit1ForInterval,HIGH);
     digitalWrite(bit2ForInterval,HIGH);
   }else{ //갑자기 감지된 물체가 없으면 정상적으로 시스템 작동
-    if(whether_person_detected){ // person detection - 정상주행
-      make_warning_sound();
-    }else{ // No person detection
+    
+    // 사람 감지한 최근 시간을 업데이트
+    if(whether_person_detected){
+      lastestDetectionTime = millis();
+    }
+
+    gap = millis() - lastestDetectionTime;
+
+    if(gap > 500){ // No person detection - gap이 0.5s보다 크면 정상 주행
       // send signal for Interval1_no_detection
       digitalWrite(bit1ForInterval,LOW);
       digitalWrite(bit2ForInterval,LOW);
+    }else{ // person detection
+      make_warning_sound();
     }
   }
 }
@@ -256,35 +264,3 @@ void loop(){
   float tvelocity=measure_velocity_using_encoder();
   Serial.println(tvelocity);
   */
-
-/* Sound Sensor
-#define SOUND A0
-int vol = 0;
-int count = 0;
-
-
-void setup() {
-  Serial.begin(9600);
-}
-
-void loop() {
-  vol = analogRead(SOUND);
-
-  if(vol>300){
-    count++;
-    Serial.print("sound: ");
-    Serial.println(count);
-    Serial.print("volume: ");
-    Serial.println(vol);
-    delay(500);
-  }
-
-  /*
-  Serial.print("sound volume : ");
-  Serial.print(vol);
-  Serial.println();
-  delay(100);
-  */
-
-
-/* 바퀴 지름 6.6 */
