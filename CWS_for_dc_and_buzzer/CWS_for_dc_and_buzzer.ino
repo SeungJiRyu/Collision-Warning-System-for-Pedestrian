@@ -82,8 +82,6 @@ void buzzer_sound_mode2(uint8_t DUTY){
 
   // //Delay 10 * 2ms = 20ms, 20ms 동안 경보
   // unsigned long currentMillis = millis();
-
-  // delay(2000); 딜레이가 없어도 문제 없는지 확인 필요
 }
 
 
@@ -121,6 +119,8 @@ void loop() {
   interval = distinguish_Interval();
 
   /* loop for driver controller and buzzer */
+
+  /* speedController using potentiometer */
   uint8_t speedControl = min(analogRead(A5)/4,limitPWM); //가변저항 output(range:0~255)
 
  
