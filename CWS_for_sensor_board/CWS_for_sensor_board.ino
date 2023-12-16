@@ -9,11 +9,14 @@
 #define bit1ForInterval 4
 #define bit2ForInterval 5
 
+/* Constant for HOG Descriptor */
+#define HOG 6 //라즈베리파이에서 받을 핀 번호 설정
+
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
 #define delayTime 200 //초음파센서, 엔코더 딜레이
-volatile float filterdistance=0; //필터링을 위한 배열 선언
+volatile float filteredistance=0; //필터링을 위한 배열 선언
 volatile float sensitivity_dis=0.1;
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
@@ -27,9 +30,9 @@ float measure_distance(){
 
   unsigned long duration = pulseIn(echoPin,HIGH);
   float distance = ((float) (340*duration)/10000)/2;
-  filterdistance = filterdistance *(1-sensitivity_dis)+distance*sensitivity_dis;
+  filteredistance = filteredistance *(1-sensitivity_dis)+distance*sensitivity_dis;
   
-  return filterdistance;
+  return filteredistance;
 }
 
  /* 초음파 센서로 상대속도를 측정,계산하는 함수 */
@@ -82,17 +85,17 @@ void ISR_encoder(){
   encoder++;
 }
 
-  #define wheelDiameter  6.6 // 바퀴 지름 (cm)
-  #define rotationPerRevolution 75
-  #define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm)
-  unsigned long timePrev = 0;
-  unsigned long timeCurr = 0;
-  volatile int encoderPrev = 0;
-  volatile float revolutions = 0;
-  volatile float rpm = 0;
-  volatile float velocity = 0;
-  volatile float filteredVelocity = 0;
-  volatile float sensitivity_vel = 0.5;
+#define wheelDiameter  6.6 // 바퀴 지름 (cm)
+#define rotationPerRevolution 75
+#define distancePerRevolution  2 * PI * (wheelDiameter / 2) //한 바퀴당 이동거리(cm)
+unsigned long timePrev = 0;
+unsigned long timeCurr = 0;
+volatile int encoderPrev = 0;
+volatile float revolutions = 0;
+volatile float rpm = 0;
+volatile float velocity = 0;
+volatile float filteredVelocity = 0;
+volatile float sensitivity_vel = 0.5;
 
 float measure_velocity_using_encoder(){
   timeCurr = millis();
@@ -144,6 +147,7 @@ void make_warning_sound(){
   volatile float boundary_for_partial_brake = 28.0;
   volatile float boundary_for_full_brake = 10.0;
 
+/*******/
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
     interval = Interval4_full_brake;
     brakeflag=1;
@@ -156,9 +160,11 @@ void make_warning_sound(){
     interval = Interval1_no_detection;
     brakeflag=0;
   }
+
   if (brakeflag==1){
     interval = Interval4_full_brake;
   }
+
   if(interval == Interval2_detect){
     digitalWrite(bit1ForInterval,LOW);
     digitalWrite(bit2ForInterval,HIGH);
@@ -177,6 +183,11 @@ void make_warning_sound(){
   Serial.println(boundary_for_detect);
 }
 
+/* variable for HOG dectection */
+unsigned long lastestDetectionTime = 0;
+volatile float previousDistance = 0;
+volatile float gap = 0;
+
 void setup(){
   /* Ultrasonic */
   pinMode(echoPin,INPUT);
@@ -191,10 +202,36 @@ void setup(){
   pinMode(bit1ForInterval,OUTPUT);
   pinMode(bit2ForInterval,OUTPUT);
   brakeflag=0;
+
+  /* HOG Descriptor() */
+  pinMode(HOG,INPUT);
 }
 
 void loop(){
-  make_warning_sound();
+  int whether_person_detected = digitalRead(HOG);
+  previousDistance = measure_distance();
+
+  if(measure_distance() < 10){// 갑자기 10cm 이내에 물체가 감지되면
+    digitalWrite(bit1ForInterval,HIGH);
+    digitalWrite(bit2ForInterval,HIGH);
+  }else{ //갑자기 감지된 물체가 없으면 정상적으로 시스템 작동
+    
+    // 사람 감지한 최근 시간을 업데이트
+    if(whether_person_detected){
+      lastestDetectionTime = millis();
+    }
+
+    gap = millis() - lastestDetectionTime;
+
+    if(gap > 500){ // No person detection - gap이 0.5s보다 크면 정상 주행
+      // send signal for Interval1_no_detection
+      digitalWrite(bit1ForInterval,LOW);
+      digitalWrite(bit2ForInterval,LOW);
+    }else{ // person detection
+      make_warning_sound();
+    }
+  }
+}
 
   //Test code
   //Serial.print(digitalRead(4));
@@ -229,36 +266,3 @@ void loop(){
   float tvelocity=measure_velocity_using_encoder();
   Serial.println(tvelocity);
   */
-}
-
-/* Sound Sensor
-#define SOUND A0
-int vol = 0;
-int count = 0;
-
-
-void setup() {
-  Serial.begin(9600);
-}
-
-void loop() {
-  vol = analogRead(SOUND);
-
-  if(vol>300){
-    count++;
-    Serial.print("sound: ");
-    Serial.println(count);
-    Serial.print("volume: ");
-    Serial.println(vol);
-    delay(500);
-  }
-
-  /*
-  Serial.print("sound volume : ");
-  Serial.print(vol);
-  Serial.println();
-  delay(100);
-  */
-
-
-/* 바퀴 지름 6.6 */
