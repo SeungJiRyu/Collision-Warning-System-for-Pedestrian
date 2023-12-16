@@ -10,9 +10,7 @@
 #define bit2ForInterval 5
 
 /* Constant for HOG Descriptor */
-#define HOG 9999 //라즈베리파이에서 받을 핀 번호 설정
-#define situation1_normal 555
-#define situation2_
+#define HOG 6 //라즈베리파이에서 받을 핀 번호 설정
 
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
