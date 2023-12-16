@@ -147,6 +147,7 @@ void make_warning_sound(){
   volatile float boundary_for_partial_brake = 28.0;
   volatile float boundary_for_full_brake = 10.0;
 
+/*******/
   if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
     interval = Interval4_full_brake;
     brakeflag=1;
@@ -211,7 +212,7 @@ void loop(){
   int whether_person_detected = digitalRead(HOG);
   previousDistance = measure_distance();
 
-  if((previousDistance - measure_distance() > 10) && (measure_distance() < 10)){// 갑자기 10cm 이내에 물체가 감지되면
+  if(measure_distance() < 10){// 갑자기 10cm 이내에 물체가 감지되면
     digitalWrite(bit1ForInterval,HIGH);
     digitalWrite(bit2ForInterval,HIGH);
   }else{ //갑자기 감지된 물체가 없으면 정상적으로 시스템 작동
