@@ -5,9 +5,7 @@
 #define BUZZER 3 // buzzer output - PD3
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
 volatile uint8_t DUTY = 95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
-
-//Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
-volatile unsigned long previousMillis = 0;
+volatile unsigned long previousMillis = 0; //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
 volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
 
 /* Constant for driver controller */
@@ -28,7 +26,11 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define Interval4_full_brake 993
 volatile int interval = Interval1_no_detection;
 
-//거리에 따라 상황을 구별하는 함수
+#define situation1_normal 555
+#define situation2_sudden_dectection 556
+volatile int situation = situation1_no_person; //check for situation
+
+//충돌거리에 따라 구간을 구별하는 함수
 int distinguish_interval(){
   volatile int bit1 = digitalRead(bit1ForInterval);
   volatile int bit2 = digitalRead(bit2ForInterval);
@@ -84,6 +86,36 @@ void buzzer_sound_mode2(uint8_t DUTY){
   // unsigned long currentMillis = millis();
 }
 
+/* brake system(Driver Controller) for each interval */
+void normal_drive(){
+  analogWrite(PWM_motor,speedControl);
+  digitalWrite(frontDirection1,HIGH);
+  digitalWrite(frontDirection2,LOW);
+  digitalWrite(rearDirection1,HIGH);
+  digitalWrite(rearDirection2,LOW);
+}
+void partial_brake(){
+  if(speedControl<10){
+    analogWrite(PWM_motor,speedControl);
+    }
+    else{
+      analogWrite(PWM_motor,PWMControl);
+    }
+    digitalWrite(frontDirection1,HIGH);
+    digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전
+    digitalWrite(rearDirection1,HIGH);
+    digitalWrite(rearDirection2,LOW);
+}
+void full_brake(){
+  analogWrite(PWM_motor,speedControl);
+  digitalWrite(frontDirection1,LOW);
+  digitalWrite(frontDirection2,LOW); //정지
+  digitalWrite(rearDirection1,LOW);
+  digitalWrite(rearDirection2,LOW);
+}
+
+
+
 
 void setup() {
   /* Serial communicaton for distinguishing Interval */
@@ -115,7 +147,8 @@ void setup() {
 
 
 void loop() {
-  //상황 구별
+  //충돌거리에 따른 구간 구별
+  situation = distinguish_situation()
   interval = distinguish_Interval();
 
   /* loop for driver controller and buzzer */
@@ -123,54 +156,27 @@ void loop() {
   /* speedController using potentiometer */
   uint8_t speedControl = min(analogRead(A5)/4,limitPWM); //가변저항 output(range:0~255)
 
- 
-  if(interval == Interval4_full_brake){ //정지
-    analogWrite(PWM_motor,speedControl);
-    digitalWrite(frontDirection1,LOW);
-    digitalWrite(frontDirection2,LOW); // 정지
-    digitalWrite(rearDirection1,LOW);
-    digitalWrite(rearDirection2,LOW);
-   
+  
+
+ /* driver controller */
+  if(interval == Interval4_full_brake){ 
+    full_brake();
     DDRD &= ~(1<<BUZZER);
     digitalWrite(ledWarning, LOW);
   }else if(interval == Interval2_detect){
-    analogWrite(PWM_motor,speedControl);
-    digitalWrite(frontDirection1,HIGH);
-    digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전
-    digitalWrite(rearDirection1,HIGH);
-    digitalWrite(rearDirection2,LOW);
+    nomal_drive();
     buzzer_sound_mode1(DUTY);
-
     digitalWrite(ledWarning, LOW);
   }else if(interval == Interval3_partial_brake){
-    if(speedControl<10){
-    analogWrite(PWM_motor,speedControl);
-    }
-    else{
-      analogWrite(PWM_motor,PWMControl);
-    }
-    digitalWrite(frontDirection1,HIGH);
-    digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전
-    digitalWrite(rearDirection1,HIGH);
-    digitalWrite(rearDirection2,LOW);
-
+    partial_brake();
     buzzer_sound_mode2(DUTY);
     digitalWrite(ledWarning, HIGH);
   }else{ //interval == Interval1_no_detection
-    analogWrite(PWM_motor,speedControl);
-    digitalWrite(frontDirection1,HIGH);
-    digitalWrite(frontDirection2,LOW); // +- 라서 정방향 회전
-    digitalWrite(rearDirection1,HIGH);
-    digitalWrite(rearDirection2,LOW);
-
+    normal_drive();
     DDRD &= ~(1<<BUZZER); //buzzer off
     digitalWrite(ledWarning, LOW);
   }
-  /* loop for buzzer */
 
-  //Serial.println(speedControl);
-
-  // DDRD &= ~(1<<BUZZER);
   Serial.print(digitalRead(4));
   Serial.print(",");
   Serial.println(digitalRead(5));
