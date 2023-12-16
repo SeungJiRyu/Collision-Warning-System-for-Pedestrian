@@ -216,20 +216,12 @@ void loop(){
     digitalWrite(bit1ForInterval,HIGH);
     digitalWrite(bit2ForInterval,HIGH);
   }else{ //갑자기 감지된 물체가 없으면 정상적으로 시스템 작동
-    
-    // 사람 감지한 최근 시간을 업데이트
-    if(whether_person_detected){
-      lastestDetectionTime = millis();
-    }
-
-    gap = millis() - lastestDetectionTime;
-
-    if(gap > 500){ // No person detection - gap이 0.5s보다 크면 정상 주행
+    if(whether_person_detected){ // person detection - 정상주행
+      make_warning_sound();
+    }else{ // No person detection
       // send signal for Interval1_no_detection
       digitalWrite(bit1ForInterval,LOW);
       digitalWrite(bit2ForInterval,LOW);
-    }else{ // person detection
-      make_warning_sound();
     }
   }
 }
