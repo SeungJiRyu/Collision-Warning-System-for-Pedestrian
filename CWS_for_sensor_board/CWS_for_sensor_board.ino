@@ -26,13 +26,13 @@ volatile float filterdistance_right=80;
 volatile float distance_left = 0;
 volatile float filterdistance_left=80;
 
-volatile float sensitivity_dis=0.2;
+volatile float sensitivity_dis=0.1;
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
 float measure_distance(){
   digitalWrite(echoPin,LOW);
   digitalWrite(trigPin,LOW);
-  delayMicroseconds(2);
+  delayMicroseconds(5);
   digitalWrite(trigPin,HIGH);
   delayMicroseconds(10);
   digitalWrite(trigPin,LOW);
@@ -42,7 +42,7 @@ float measure_distance(){
   filterdistance = filterdistance *(1-sensitivity_dis)+distance*sensitivity_dis;
   
   //테스트용
-  //Serial.println(filterdistance);
+  Serial.println(filterdistance);
 
   return filterdistance;
 }
@@ -158,7 +158,6 @@ float measure_velocity_using_encoder(){
     filteredVelocity = filteredVelocity * (1-sensitivity_vel) + velocity * sensitivity_vel;
     encoderPrev = encoder;
     interrupts();
-
     return filteredVelocity;
   }
 }
@@ -169,7 +168,7 @@ float measure_velocity_using_encoder(){
 float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 // 킥보드의 속도에 따라 '충돌예상거리'를 결정해주는 함수
   float vel = measure_velocity_using_encoder();
-  float col_dist = max(40.0,min(80.0,40.0+(80.0-40.0)/40.0*(vel))); //40: speed max value
+  float col_dist = 20.0+(65.0-20.0)/40.0*(vel); //40: speed max value
 
   // if(vel<=2.0){
   //   runflag=0;
@@ -208,6 +207,7 @@ void setup(){
   /* Ultrasonic */
   pinMode(echoPin,INPUT);
   pinMode(trigPin,OUTPUT);
+  pinMode(8,OUTPUT); //////////////////////////test
 
   /* Encoder */
   Serial.begin(9600);
@@ -231,9 +231,11 @@ void loop(){
   int detected = analogRead(HOG); //3.3/5 * 1023 = 675.18
   bool whether_person_detected = false;
 
-  if((detected < 690) && (detected > 650)){
+  if((detected < 790) && (detected > 650)){
     whether_person_detected = true;
-    digitalWrite(bit3ForControllingdB,HIGH);
+  }
+  else{
+    whether_person_detected = false;
   }
   
   volatile float distance_front = measure_distance();
@@ -247,11 +249,23 @@ void loop(){
   }
   gap = millis() - lastestDetectionTime;
 
-  if(gap > 500){ // No person detection - gap이 0.3s보다 크면 정상 주행
+  if(gap > 1200){ // No person detection - gap이 0.3s보다 크면 정상 주행
     whether_person_detected = false;
   }else{ // person detection
     whether_person_detected = true;
   }
+  
+  if(whether_person_detected==1){
+    digitalWrite(bit3ForControllingdB, HIGH);
+    digitalWrite(8,HIGH); /////////////////////////test
+  }
+  else{
+    digitalWrite(bit3ForControllingdB, LOW);
+    digitalWrite(8,LOW); ///////////////////////test
+  }
+
+  // Serial.print(String(whether_person_detected));
+  // Serial.print(', ');
   
   /* 상황 판단 */
   if((distance_front < boundary_for_full_brake)){ //&& (runflag==true)
@@ -262,7 +276,7 @@ void loop(){
   }else if((distance_front < boundary_for_detect)&&(whether_person_detected)){//
     interval = Interval2_detect;
   }else{
-    if (((distance_right <= 40) || (distance_left <= 40)) && whether_person_detected){
+    if (((distance_right <= 33) || (distance_left <= 33)) && whether_person_detected){
       interval = Interval2_detect;
     }
     else{
@@ -292,9 +306,9 @@ void loop(){
     digitalWrite(bit1ForInterval,LOW);
     digitalWrite(bit2ForInterval,LOW);
   }
-  Serial.print(distance_right);
-  Serial.print(',');
-  Serial.println(distance_left);
+  // Serial.println(gap);
+  // Serial.print(',');
+  // Serial.println(distance_left);
   // Serial.print(digitalRead(4));
   // Serial.println(digitalRead(5));
 }
@@ -332,3 +346,4 @@ void loop(){
   float tvelocity=measure_velocity_using_encoder();
   Serial.println(tvelocity);
   */
+
