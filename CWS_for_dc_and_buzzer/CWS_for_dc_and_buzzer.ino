@@ -5,7 +5,7 @@
 #define BUZZER 3 // buzzer output - PD3
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
 
-volatile uint8_t DUTY = 95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
+volatile uint8_t DUTY = 1; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
 volatile unsigned long previousMillis = 0; //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
 volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
 
@@ -26,6 +26,7 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define Interval3_partial_brake 992
 #define Interval4_full_brake 993
 volatile int interval = Interval1_no_detection;
+volatile int brakeflag = 0;
 
 #define situation1_normal 555
 #define situation2_sudden_dectection 556
@@ -143,6 +144,7 @@ void setup() {
   OCR2A = F_CPU / 256 / frequency -1;
   OCR2B = OCR2A *DUTY/100;
 
+  brakeflag = 0;
 }
 
 
@@ -159,23 +161,38 @@ void loop() {
  /* driver controller */
   if(interval == Interval4_full_brake){ 
     full_brake(speedControl);
+    if (brakeflag==0){
+      buzzer_sound_mode2(DUTY);
+      digitalWrite(ledWarning, HIGH);
+      delay(1000);
+      brakeflag=1; 
+    }
     DDRD &= ~(1<<BUZZER);
-    digitalWrite(ledWarning, LOW);\
+    digitalWrite(ledWarning, LOW);
     //delay(5000); //급제동 후 다시 출발하지 않도록 구동부를 정지
   }else if(interval == Interval2_detect){
     normal_drive(speedControl);
     buzzer_sound_mode1(DUTY);
     digitalWrite(ledWarning, LOW);
   }else if(interval == Interval3_partial_brake){
-    partial_brake(speedControl);
-    buzzer_sound_mode2(DUTY);
-    digitalWrite(ledWarning, HIGH);
+    if(brakeflag==0){
+      partial_brake(speedControl);
+      buzzer_sound_mode2(DUTY);
+      digitalWrite(ledWarning, HIGH);
+    }
+    else{
+      full_brake(speedControl);
+      DDRD &= ~(1<<BUZZER);
+      digitalWrite(ledWarning, LOW);
+    }
   }else{ //interval == Interval1_no_detection
     normal_drive(speedControl);
     DDRD &= ~(1<<BUZZER); //buzzer off
     digitalWrite(ledWarning, LOW);
   }
-
+  if((interval == Interval2_detect)||(interval == Interval1_no_detection)){
+    brakeflag=0;
+  }
   Serial.print(digitalRead(4));
   Serial.print(",");
   Serial.println(digitalRead(5));
