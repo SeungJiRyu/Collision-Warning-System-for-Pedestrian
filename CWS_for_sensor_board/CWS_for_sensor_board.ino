@@ -8,9 +8,11 @@
 #define BUZZER 3 // buzzer output - PD3
 #define bit1ForInterval 4
 #define bit2ForInterval 5
+#define bit3ForControllingdB  6
+#define bit4ForSpeedmeasure 7
 
 /* Constant for HOG Descriptor */
-#define HOG 6 //라즈베리파이에서 받을 핀 번호 설정
+#define HOG A0 //라즈베리파이에서 받을 핀 번호 설정
 
 /* Ultrasonic code */
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
@@ -218,27 +220,37 @@ void setup(){
 
   /* HOG Descriptor() */
   pinMode(HOG,INPUT);
+  pinMode(bit3ForControllingdB,OUTPUT); 
 
   /* make warning sound */
   interval = Interval1_no_detection;
 }
 
 void loop(){
-  //Rasberrypi signal debouncing
-  int whether_person_detected = 1;//digitalRead(HOG);
+  /* check whether person is detected */
+  int detected = analogRead(HOG); //3.3/5 * 1023 = 675.18
+  bool whether_person_detected = false;
+
+  if((detected < 690) && (detected > 650)){
+    whether_person_detected = true;
+    digitalWrite(bit3ForControllingdB,HIGH);
+  }
+  
   volatile float distance_front = measure_distance();
   volatile float distance_right = measure_dist_right();
   volatile float distance_left = measure_dist_left();
   volatile float boundary_for_detect = estimate_collision_distance();
+  
+    /* Rasberrypi signal debouncing */
   if(whether_person_detected){
     lastestDetectionTime = millis();
   }
   gap = millis() - lastestDetectionTime;
 
-  if(gap > 300){ // No person detection - gap이 0.3s보다 크면 정상 주행
-    whether_person_detected = 0;
+  if(gap > 500){ // No person detection - gap이 0.3s보다 크면 정상 주행
+    whether_person_detected = false;
   }else{ // person detection
-    whether_person_detected = 1;
+    whether_person_detected = true;
   }
   
   /* 상황 판단 */
