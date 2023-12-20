@@ -6,8 +6,8 @@
 #define frequency 440.00; //라 음계, 사람이 가장 잘 인지하는 주파수
 
 volatile uint8_t DUTY = 1; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
-volatile uint8_t DUTYforPesdestrian = 95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
-volatile uint8_t DUTYforOnlyDriver = 5;
+volatile uint8_t DUTYforPesdestrian = 95;//95; // dB를 제어하기 위한 duty값 : (PWM / [5, 15, 30, 95] 4단계로 구분
+volatile uint8_t DUTYforOnlyDriver = 5;//5;
 volatile unsigned long previousMillis = 0; //Delay 없이 부저를 제어하기 위해 시간을 측정하는 변수
 volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜져있다는 뜻 -> Toggle을 위해 사용
 
@@ -22,7 +22,7 @@ volatile int flag =0; //0이 부저가 꺼져있다는 뜻, 1은 부저가 켜�
 #define bit2ForInterval 5
 #define bit3ForControllingdB 13
 #define ledWarning 2
-#define limitPWM  120
+#define limitPWM  160
 #define PWMControl  60
 #define Interval1_no_detection 990
 #define Interval2_detect 991
@@ -176,7 +176,7 @@ void loop() {
     if (brakeflag==0){
       buzzer_sound_mode2(decibel);
       digitalWrite(ledWarning, HIGH);
-      delay(1000);
+      delay(300);
       brakeflag=1; 
     }
     DDRD &= ~(1<<BUZZER);
