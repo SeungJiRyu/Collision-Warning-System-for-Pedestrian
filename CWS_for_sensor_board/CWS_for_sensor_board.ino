@@ -16,8 +16,15 @@
 //Warning : 둘 다 실수로 나오므로 Serial.print로 확인하기 위해서는 강제로 형변환 필요 - Serial.print(String(float_value));
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
 #define delayTime 200 //초음파센서, 엔코더 딜레이
-volatile float filteredistance=0; //필터링을 위한 배열 선언
-volatile float sensitivity_dis=0.1;
+volatile float filterdistance=30; //필터링을 위한 배열 선언, 시작점을 30으로,
+
+volatile float distance_right = 0;
+volatile float filterdistance_right=80;
+
+volatile float distance_left = 0;
+volatile float filterdistance_left=80;
+
+volatile float sensitivity_dis=0.2;
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
 float measure_distance(){
@@ -30,11 +37,44 @@ float measure_distance(){
 
   unsigned long duration = pulseIn(echoPin,HIGH);
   float distance = ((float) (340*duration)/10000)/2;
-  filteredistance = filteredistance *(1-sensitivity_dis)+distance*sensitivity_dis;
+  filterdistance = filterdistance *(1-sensitivity_dis)+distance*sensitivity_dis;
   
-  return filteredistance;
+  //테스트용
+  //Serial.println(filterdistance);
+
+  return filterdistance;
 }
 
+
+float measure_dist_right(){
+  int volt = map(analogRead(A5), 0, 1023, 0, 5000);
+     
+  distance_right = (27.61 / (volt - 0.1696)) * 1000.0;
+  if (distance_right < 0){
+    distance_right=-distance_right;
+  }
+  if (distance_right>=200){
+    distance_right=200;
+  }
+  filterdistance_right=filterdistance_right*(1-sensitivity_dis)+distance_right*sensitivity_dis;
+  
+  return filterdistance_right;
+}
+
+float measure_dist_left(){
+  int volt = map(analogRead(A4), 0, 1023, 0, 5000);
+     
+  distance_left = (27.61 / (volt - 0.1696)) * 1000.0;
+  if (distance_left < 0){
+    distance_left=-distance_left;
+  }
+  if (distance_left>=150){
+    distance_left=200;
+  }
+  filterdistance_left=filterdistance_left*(1-sensitivity_dis)+distance_left*sensitivity_dis;
+  
+  return filterdistance_left;
+}
  /* 초음파 센서로 상대속도를 측정,계산하는 함수 */
 float calculate_relative_velocity_using_Ultrasonic(){
   float distance1, distance2, velocity, filtered_velocity;
@@ -97,6 +137,11 @@ volatile float velocity = 0;
 volatile float filteredVelocity = 0;
 volatile float sensitivity_vel = 0.5;
 
+volatile float boundary_for_partial_brake = 20.0;
+volatile float boundary_for_full_brake = 7.0;
+
+volatile int interval; //충돌예상거리에 따른 상황분류를 위한 변수
+
 float measure_velocity_using_encoder(){
   timeCurr = millis();
   if(timeCurr - timePrev > delayTime){ //1초마다 출력
@@ -116,21 +161,22 @@ float measure_velocity_using_encoder(){
   }
 }
 
-volatile boolean runflag = true;
+//int runflag = 0;
 
 /* Collision distance */
 float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 // 킥보드의 속도에 따라 '충돌예상거리'를 결정해주는 함수
   float vel = measure_velocity_using_encoder();
-  float col_dist = max(20.0,min(70.0,20.0+(70.0-20.0)/40.0*(vel))); //25: speed max value
+  float col_dist = max(40.0,min(80.0,40.0+(80.0-40.0)/40.0*(vel))); //40: speed max value
 
   // if(vel<=2.0){
-  //   runflag=false;
+  //   runflag=0;
   // }
   // else{
-  //   runflag=true;
+  //   runflag=1;
   // }
   return col_dist;
+
 }
 
 /* Buzzer code */
@@ -139,53 +185,21 @@ float estimate_collision_distance() { //값은 모두 소수점 붙여야 함
 #define Interval3_partial_brake 992 //10
 #define Interval4_full_brake 993 //11
 
-volatile int brakeflag=0;
+//volatile int brakeflag=0;
 
 void make_warning_sound(){
-  volatile int interval = Interval1_no_detection; //충돌예상거리에 따른 상황분류를 위한 변수
-  volatile float boundary_for_detect = estimate_collision_distance();
-  volatile float boundary_for_partial_brake = 28.0;
-  volatile float boundary_for_full_brake = 10.0;
 
+  
+  
 /*******/
-  if((measure_distance() < boundary_for_full_brake) && (runflag==true)){ //&& (runflag==true)
-    interval = Interval4_full_brake;
-    brakeflag=1;
-  }else if((measure_distance() < boundary_for_partial_brake)&& (runflag==true)){
-    interval = Interval3_partial_brake;
-  }else if((measure_distance() < boundary_for_detect)&& (runflag==true)){
-    interval = Interval2_detect;
-    brakeflag=0;
-  }else{
-    interval = Interval1_no_detection;
-    brakeflag=0;
-  }
+  
+  
 
-  if (brakeflag==1){
-    interval = Interval4_full_brake;
-  }
-
-  if(interval == Interval2_detect){
-    digitalWrite(bit1ForInterval,LOW);
-    digitalWrite(bit2ForInterval,HIGH);
-  }
-  else if(interval == Interval3_partial_brake){
-    digitalWrite(bit1ForInterval,HIGH);
-    digitalWrite(bit2ForInterval,LOW);
-  }else if(interval == Interval4_full_brake){
-    digitalWrite(bit1ForInterval,HIGH);
-    digitalWrite(bit2ForInterval,HIGH);
-  }else{
-    digitalWrite(bit1ForInterval,LOW);
-    digitalWrite(bit2ForInterval,LOW);
-  }
-
-  Serial.println(boundary_for_detect);
+  //Serial.println(boundary_for_detect);
 }
 
 /* variable for HOG dectection */
 unsigned long lastestDetectionTime = 0;
-volatile float previousDistance = 0;
 volatile float gap = 0;
 
 void setup(){
@@ -201,36 +215,76 @@ void setup(){
   /* Buzzer */
   pinMode(bit1ForInterval,OUTPUT);
   pinMode(bit2ForInterval,OUTPUT);
-  brakeflag=0;
 
   /* HOG Descriptor() */
   pinMode(HOG,INPUT);
+
+  /* make warning sound */
+  interval = Interval1_no_detection;
 }
 
 void loop(){
-  int whether_person_detected = digitalRead(HOG);
-  previousDistance = measure_distance();
+  //Rasberrypi signal debouncing
+  int whether_person_detected = 1;//digitalRead(HOG);
+  volatile float distance_front = measure_distance();
+  volatile float distance_right = measure_dist_right();
+  volatile float distance_left = measure_dist_left();
+  volatile float boundary_for_detect = estimate_collision_distance();
+  if(whether_person_detected){
+    lastestDetectionTime = millis();
+  }
+  gap = millis() - lastestDetectionTime;
 
-  if(measure_distance() < 10){// 갑자기 10cm 이내에 물체가 감지되면
-    digitalWrite(bit1ForInterval,HIGH);
-    digitalWrite(bit2ForInterval,HIGH);
-  }else{ //갑자기 감지된 물체가 없으면 정상적으로 시스템 작동
-    
-    // 사람 감지한 최근 시간을 업데이트
-    if(whether_person_detected){
-      lastestDetectionTime = millis();
+  if(gap > 300){ // No person detection - gap이 0.3s보다 크면 정상 주행
+    whether_person_detected = 0;
+  }else{ // person detection
+    whether_person_detected = 1;
+  }
+  
+  /* 상황 판단 */
+  if((distance_front < boundary_for_full_brake)){ //&& (runflag==true)
+    interval = Interval4_full_brake;
+    //brakeflag=1;
+  }else if((distance_front < boundary_for_partial_brake)){
+    interval = Interval3_partial_brake;
+  }else if((distance_front < boundary_for_detect)&&(whether_person_detected)){//
+    interval = Interval2_detect;
+  }else{
+    if (((distance_right <= 40) || (distance_left <= 40)) && whether_person_detected){
+      interval = Interval2_detect;
     }
-
-    gap = millis() - lastestDetectionTime;
-
-    if(gap > 500){ // No person detection - gap이 0.5s보다 크면 정상 주행
-      // send signal for Interval1_no_detection
-      digitalWrite(bit1ForInterval,LOW);
-      digitalWrite(bit2ForInterval,LOW);
-    }else{ // person detection
-      make_warning_sound();
+    else{
+      interval = Interval1_no_detection;
     }
   }
+
+  // if (brakeflag==1){
+  //   interval = Interval4_full_brake;
+  // }
+
+  // if(distance_front==0){
+  //   brakeflag=0;
+  // }
+
+  if(interval == Interval2_detect){
+    digitalWrite(bit1ForInterval,LOW);
+    digitalWrite(bit2ForInterval,HIGH);
+  }
+  else if(interval == Interval3_partial_brake){
+    digitalWrite(bit1ForInterval,HIGH);
+    digitalWrite(bit2ForInterval,LOW);
+  }else if(interval == Interval4_full_brake){
+    digitalWrite(bit1ForInterval,HIGH);
+    digitalWrite(bit2ForInterval,HIGH);
+  }else{
+    digitalWrite(bit1ForInterval,LOW);
+    digitalWrite(bit2ForInterval,LOW);
+  }
+  Serial.print(distance_right);
+  Serial.print(',');
+  Serial.println(distance_left);
+  // Serial.print(digitalRead(4));
+  // Serial.println(digitalRead(5));
 }
 
   //Test code
@@ -245,13 +299,13 @@ void loop(){
   Serial.println();
   */
 
-  /* Test for ultra-sonic */
-  float value = measure_distance();
-  Serial.print("거리:");
-  Serial.print(String(value));
-  Serial.print(",");
-  Serial.print(digitalRead(4));
-  Serial.println(digitalRead(5));
+  /* Test for ultra-sonic*/
+  // float value = measure_distance();
+  // Serial.print("거리:");
+  // Serial.print(String(value));
+  // Serial.println(",");
+  //Serial.print(digitalRead(4));
+  //Serial.println(digitalRead(5));
 
   // make_warning_sound();
   //
