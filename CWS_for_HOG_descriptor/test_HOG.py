@@ -11,7 +11,7 @@ cap.set(cv2.CAP_PROP_FRAME_WIDTH,640)
 cap.set(cv2.CAP_PROP_FRAME_HEIGHT,480)
 
 # Setting GPIO output
-GPIO_PIN = 17
+GPIO_PIN = 27
 GPIO.setwarnings(False)
 GPIO.setmode(GPIO.BCM)
 GPIO.setup(GPIO_PIN,GPIO.OUT)
