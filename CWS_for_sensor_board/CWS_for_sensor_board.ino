@@ -4,6 +4,7 @@
 /* Constant for setup */
 #define trigPin 12 //ultrasonic output
 #define echoPin 13 //ultrasonic input
+#define infraredRay A1 //Infrared input
 #define trigPin_right 10 //ultrasonic output
 #define echoPin_right 11 //ultrasonic input
 #define trigPin_left 7 //ultrasonic output
@@ -22,7 +23,8 @@
 #define offsetForZero 13 //초음파센서 영점을 맞추기 위한 변수
 #define delayTime 200 //초음파센서, 엔코더 딜레이
 volatile float filterdistance=50; //필터링을 위한 배열 선언, 시작점을 30으로,
-
+volatile float distance_infrared=0;
+volatile float filterdistance_infrared=50;
 volatile float distance_right = 0;
 volatile float filterdistance_right=50;
 
@@ -30,6 +32,9 @@ volatile float distance_left = 0;
 volatile float filterdistance_left=50;
 
 volatile float sensitivity_dis=0.6;
+
+volatile float weight_ultra=1; // 초음파센서 값 / 적외선센서 값 사용비율
+
 
 /* 초음파 센서로 전방거리를 측정하는 함수 */
 float measure_distance(){
@@ -48,6 +53,33 @@ float measure_distance(){
   // Serial.println(filterdistance);
 
   return filterdistance;
+}
+
+float measured_distance_comp(){
+  int volt = map(analogRead(infraredRay), 0, 1023, 0, 5000); 
+  distance_infrared = (27.61 / (volt - 0.1696)) * 1000;
+  filterdistance_infrared = filterdistance_infrared*(1-sensitivity_dis)+distance_infrared*sensitivity_dis;
+
+  return filterdistance_infrared;
+}
+
+/* 센서 이상 발생 시 보정하는 함수 */
+float distance_compliment(float ultra_val,float infrared_val){
+  
+  if (ultra_val<10){
+      weight_ultra=1;
+  }else{
+    if (ultra_val-infrared_val > 5){ //전방 장애물의 경사가 기울어진 상황
+      weight_ultra=0;
+    }
+    else if (ultra_val - infrared_val < -5){ // 주간, 외부 적외선에 의해 센서 값에 오차가 발생한 상황
+      weight_ultra=0.9;
+    }else{
+      weight_ultra=0.5;
+    }
+  }
+  float distance_corr = ultra_val*weight_ultra + infrared_val*(1-weight_ultra);
+  return distance_corr;
 }
 
 float measure_dist_right(){
@@ -232,6 +264,9 @@ void setup(){
   pinMode(trigPin,OUTPUT);;
   pinMode(8,OUTPUT); //////////////////////////test
 
+  /* Infrared ray sensor */
+  pinMode(infraredRay,INPUT);
+
   /* Encoder */
   Serial.begin(9600);
   pinMode(ENCODER, INPUT_PULLUP);
@@ -263,9 +298,11 @@ void loop(){
   }
   
   
-  volatile float distance_right = 60;//measure_dist_right();
+  volatile float distance_right = measure_dist_right();
   volatile float distance_left = measure_dist_left();
   volatile float distance_front = measure_distance();
+  volatile float distance_front_comp = measured_distance_comp();
+  volatile float distance_front_corr=distance_compliment(distance_front,distance_front_comp);
   volatile float boundary_for_detect = estimate_collision_distance();
   
     /* Rasberrypi signal debouncing */
@@ -291,12 +328,12 @@ void loop(){
   // Serial.print(', ');
   
   /* 상황 판단 */
-  if((distance_front < boundary_for_full_brake)){ //&& (runflag==true)
+  if((distance_front_corr < boundary_for_full_brake)){ //&& (runflag==true)
     interval = Interval4_full_brake;
     //brakeflag=1;
-  }else if((distance_front < boundary_for_partial_brake)){
+  }else if((distance_front_corr < boundary_for_partial_brake)){
     interval = Interval3_partial_brake;
-  }else if((distance_front < boundary_for_detect)&&(whether_person_detected)){//
+  }else if((distance_front_corr < boundary_for_detect)&&(whether_person_detected)){//
     interval = Interval2_detect;
   }else{
     if (((distance_right <= 27) || (distance_left <= 27)) && whether_person_detected){
@@ -311,7 +348,7 @@ void loop(){
   //   interval = Interval4_full_brake;
   // }
 
-  // if(distance_front==0){
+  // if(distance_front_corr==0){
   //   brakeflag=0;
   // }
 
@@ -331,11 +368,15 @@ void loop(){
   }
   // Serial.println(gap);
   Serial.print("front : ");
-  Serial.print(distance_front);
-  Serial.print("  left : ");
-  Serial.print(distance_left);
-  Serial.print("  right : ");
-  Serial.println(boundary_for_detect);
+  //Serial.print(distance_front);
+  // Serial.print(" , ");
+  // Serial.print(distance_front_comp);
+  // Serial.print(" , ");
+  Serial.println(distance_front_corr);
+  // Serial.print("  left : ");
+  // Serial.print(distance_left);
+  // Serial.print("  right : ");
+  // Serial.println(boundary_for_detect);
 
   // Serial.print(',');
   // Serial.println(distance_front);
